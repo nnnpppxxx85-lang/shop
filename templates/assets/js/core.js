@@ -4,7 +4,20 @@ const API = {
   categories: () => fetch('/api/categories').then(r => r.json()),
   catalog: (cat) => fetch('/api/catalog' + (cat ? '?category=' + encodeURIComponent(cat) : '')).then(r => r.json()),
   product: (slug) => fetch('/api/products/' + encodeURIComponent(slug)).then(r => r.json()),
+  settings: () => fetch('/api/settings').then(r => r.json()),
 };
+
+const REF_KEY = 'dm_ref';
+
+// запоминаем ?ref=<telegram_id партнёра> из реферальной ссылки, чтобы
+// подставить его при оформлении заказа, даже если покупатель зайдёт
+// сначала на другую страницу и оформит заказ через день
+function captureReferral() {
+  const ref = new URLSearchParams(location.search).get('ref');
+  if (ref) localStorage.setItem(REF_KEY, ref);
+}
+
+const getReferral = () => localStorage.getItem(REF_KEY) || '';
 
 const fmtPrice = (n) => new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
 

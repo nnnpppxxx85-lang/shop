@@ -14,6 +14,7 @@
   <script defer src="assets/js/item.js"></script>
   <script defer src="assets/js/checkout.js"></script>
   <script defer src="assets/js/payment.js"></script>
+  <script defer src="assets/js/contacts.js"></script>
   <script defer src="assets/js/admin.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
@@ -40,6 +41,7 @@
           <button type="button" data-tab="products" class="whitespace-nowrap rounded-full border border-forest bg-forest px-4 py-2 text-sm font-bold text-paper">Товары</button>
           <button type="button" data-tab="categories" class="whitespace-nowrap rounded-full border border-line bg-paper px-4 py-2 text-sm font-bold text-subtle transition hover:text-ink">Категории</button>
           <button type="button" data-tab="orders" class="whitespace-nowrap rounded-full border border-line bg-paper px-4 py-2 text-sm font-bold text-subtle transition hover:text-ink">Заказы</button>
+          <button type="button" data-tab="settings" class="whitespace-nowrap rounded-full border border-line bg-paper px-4 py-2 text-sm font-bold text-subtle transition hover:text-ink">Настройки</button>
         </div>
 
         <!-- ========== ТОВАРЫ ========== -->
@@ -202,6 +204,31 @@
 
         <!-- ========== ЗАКАЗЫ ========== -->
         <div data-tab-panel="orders" class="mt-8 hidden grid gap-3" data-orders-list></div>
+
+        <!-- ========== НАСТРОЙКИ ========== -->
+        <div data-tab-panel="settings" class="mt-8 hidden max-w-xl">
+          <form data-settings-form class="grid gap-4 rounded-2xl border border-line bg-paper p-6">
+            <h2 class="text-xl font-bold">Реквизиты и контакты</h2>
+            <p class="text-sm text-subtle">Эти данные сразу видны покупателям: номер карты/телефона — на странице оплаты, ссылка на консультанта — на странице товара.</p>
+
+            <label class="grid gap-2">
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Номер карты для оплаты</span>
+              <input name="paymentCard" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest" placeholder="2200 0000 0000 0000">
+            </label>
+
+            <label class="grid gap-2">
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Номер телефона для оплаты (СБП)</span>
+              <input name="paymentPhone" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest" placeholder="+7 900 000-00-00">
+            </label>
+
+            <label class="grid gap-2">
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Ссылка на консультанта в Telegram</span>
+              <input name="consultantTelegram" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest" placeholder="https://t.me/username">
+            </label>
+
+            <button type="submit" class="mt-2 h-12 rounded-full bg-forest px-6 text-sm font-bold text-paper transition hover:bg-forest-dark">Сохранить</button>
+          </form>
+        </div>
 
       </div>
     </section>

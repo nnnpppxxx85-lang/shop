@@ -12,6 +12,9 @@ async function itemPage() {
   try { p = await API.product(slug); }
   catch { root.innerHTML = '<p class="col-span-full text-subtle">Товар не найден.</p>'; return; }
 
+  const settings = await API.settings().catch(() => ({}));
+  const consultantUrl = settings.consultantTelegram || '#';
+
   document.title = `${p.name} — DragonMobile`;
 
   const images = p.images || [];
@@ -77,7 +80,7 @@ async function itemPage() {
 
         <div class="mt-6 grid gap-3">
           <button class="h-12 rounded-full bg-forest px-6 text-sm font-bold text-paper transition hover:bg-forest-dark" data-buy>В корзину</button>
-          <a href="/contacts" class="flex h-12 items-center justify-center rounded-full border border-line bg-paper px-6 text-sm font-bold transition hover:border-forest/30">Спросить консультанта</a>
+          <a href="${escapeHtml(consultantUrl)}" target="_blank" rel="noopener" class="flex h-12 items-center justify-center rounded-full border border-line bg-paper px-6 text-sm font-bold transition hover:border-forest/30">Спросить консультанта</a>
         </div>
       </div>
 

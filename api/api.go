@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"dragon/bot"
 	"encoding/json"
 	"net/http"
 )
@@ -9,10 +10,11 @@ import (
 type Server struct {
 	DB         *sql.DB
 	AdminToken string
+	AdminBot   *bot.AdminBot
 }
 
-func Register(db *sql.DB, adminToken string) *http.ServeMux {
-	s := &Server{DB: db, AdminToken: adminToken}
+func Register(db *sql.DB, adminToken string, adminBot *bot.AdminBot) *http.ServeMux {
+	s := &Server{DB: db, AdminToken: adminToken, AdminBot: adminBot}
 	mux := http.NewServeMux()
 
 	// статика
@@ -35,12 +37,13 @@ func Register(db *sql.DB, adminToken string) *http.ServeMux {
 	mux.HandleFunc("GET /api/categories", s.categories)
 	mux.HandleFunc("GET /api/catalog", s.catalog)
 	mux.HandleFunc("GET /api/products/{slug}", s.product)
+	mux.HandleFunc("GET /api/settings", s.settings)
+	mux.HandleFunc("POST /api/contact", s.submitContact)
 
 	// Заказы и оплата
 	mux.HandleFunc("POST /api/orders", s.createOrder)
 	mux.HandleFunc("GET /api/orders/{id}", s.getOrder)
-	mux.HandleFunc("POST /api/orders/{id}/pay", s.payOrder)
-	mux.HandleFunc("POST /api/orders/{id}/confirm", s.confirmOrder)
+	mux.HandleFunc("POST /api/orders/{id}/confirm-payment", s.confirmPayment)
 
 	// Вход в админку
 	mux.HandleFunc("POST /api/admin/login", s.adminLogin)
@@ -62,6 +65,11 @@ func Register(db *sql.DB, adminToken string) *http.ServeMux {
 
 	// Админка — заказы
 	mux.HandleFunc("GET /api/admin/orders", s.requireAdmin(s.adminOrders))
+	mux.HandleFunc("PUT /api/admin/orders/{id}/status", s.requireAdmin(s.adminUpdateOrderStatus))
+	mux.HandleFunc("GET /api/admin/orders/{id}/receipt", s.requireAdmin(s.adminOrderReceipt))
+
+	// Админка — настройки (реквизиты оплаты, ссылка на консультанта)
+	mux.HandleFunc("PUT /api/admin/settings", s.requireAdmin(s.adminUpdateSettings))
 
 	return mux
 }

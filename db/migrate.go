@@ -25,6 +25,9 @@ func EnsureSchema(conn *sql.DB) error {
 		{"products", "bundle_buy_qty", "TINYINT UNSIGNED DEFAULT NULL"},
 		{"products", "bundle_total_qty", "TINYINT UNSIGNED DEFAULT NULL"},
 		{"order_items", "line_total", "INT UNSIGNED NOT NULL DEFAULT 0"},
+		{"orders", "referral_partner_id", "INT UNSIGNED DEFAULT NULL"},
+		{"orders", "referral_username", "VARCHAR(191) DEFAULT NULL"},
+		{"orders", "receipt_path", "VARCHAR(255) DEFAULT NULL"},
 	}
 	for _, c := range columns {
 		if err := addColumnIfMissing(conn, c.table, c.column, c.ddl); err != nil {
@@ -38,6 +41,51 @@ func EnsureSchema(conn *sql.DB) error {
 	}
 	if _, err := conn.Exec(`UPDATE order_items SET line_total = price * qty WHERE line_total = 0`); err != nil {
 		return err
+	}
+
+	tables := []string{
+		`CREATE TABLE IF NOT EXISTS settings (
+			setting_key VARCHAR(64) PRIMARY KEY,
+			value VARCHAR(255) NOT NULL DEFAULT ''
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+		`CREATE TABLE IF NOT EXISTS partners (
+			id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+			telegram_id BIGINT NOT NULL UNIQUE,
+			username VARCHAR(191) DEFAULT NULL,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+		`CREATE TABLE IF NOT EXISTS admin_recipients (
+			id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+			chat_id BIGINT NOT NULL UNIQUE,
+			username VARCHAR(191) DEFAULT NULL,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+		`CREATE TABLE IF NOT EXISTS contact_messages (
+			id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+			name VARCHAR(191) DEFAULT NULL,
+			phone VARCHAR(64) DEFAULT NULL,
+			message TEXT,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+	}
+	for _, ddl := range tables {
+		if _, err := conn.Exec(ddl); err != nil {
+			return fmt.Errorf("создание таблицы: %w", err)
+		}
+	}
+
+	defaults := map[string]string{
+		"payment_card":        "2200 0000 0000 0000",
+		"payment_phone":       "+7 900 000-00-00",
+		"consultant_telegram": "https://t.me/dragonmobile_support",
+	}
+	for key, value := range defaults {
+		if _, err := conn.Exec(`INSERT IGNORE INTO settings (setting_key, value) VALUES (?, ?)`, key, value); err != nil {
+			return fmt.Errorf("настройка %s: %w", key, err)
+		}
 	}
 
 	return nil
