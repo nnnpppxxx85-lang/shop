@@ -4,15 +4,15 @@ async function paymentPage() {
   const root = document.querySelector('[data-payment-root]');
   if (!root) return;
 
-  const orderId = new URLSearchParams(location.search).get('order');
-  if (!orderId) {
+  const orderRef = new URLSearchParams(location.search).get('order');
+  if (!orderRef) {
     root.innerHTML = `<div class="rounded-2xl border border-line bg-paper px-6 py-16 text-center"><p class="text-xl font-bold">Заказ не найден</p></div>`;
     return;
   }
 
   let order, settings;
   try {
-    const r = await fetch('/api/orders/' + orderId);
+    const r = await fetch('/api/orders/' + orderRef);
     if (!r.ok) throw new Error();
     order = await r.json();
     settings = await API.settings().catch(() => ({}));
@@ -24,17 +24,25 @@ async function paymentPage() {
   const usePhone = settings.paymentMethod === 'phone';
   const methodLabel = usePhone ? 'Номер телефона (СБП)' : 'Номер карты';
   const methodValue = usePhone ? settings.paymentPhone : settings.paymentCard;
+  const consultantUrl = settings.consultantTelegram || '';
 
   root.innerHTML = `
     <div class="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
       <div class="grid gap-4">
         <div class="rounded-2xl border border-line bg-paper p-6">
           <h2 class="text-lg font-bold">Реквизиты для оплаты</h2>
+          ${methodValue ? `
           <div class="mt-5 rounded-xl border border-line bg-canvas p-4">
             <div class="text-xs font-bold uppercase tracking-[.12em] text-subtle">${methodLabel}</div>
-            <div class="mt-2 text-lg font-extrabold tabular-nums">${escapeHtml(methodValue || '—')}</div>
+            <div class="mt-2 text-lg font-extrabold tabular-nums">${escapeHtml(methodValue)}</div>
           </div>
           <p class="mt-4 text-sm text-subtle">Переведите ${fmtPrice(order.total)} и прикрепите квитанцию (PDF) — после этого заказ уйдёт на проверку менеджеру.</p>
+          ` : `
+          <div class="mt-5 rounded-xl border border-forest/30 bg-forest/10 p-4 text-sm font-semibold text-forest">
+            Реквизиты для оплаты пока не указаны.
+            ${consultantUrl ? `Напишите <a href="${escapeHtml(consultantUrl)}" target="_blank" rel="noopener" class="underline">консультанту в Telegram</a>` : 'Свяжитесь с нами'}, чтобы уточнить, как оплатить заказ №${order.id}.
+          </div>
+          `}
         </div>
 
         <form data-confirm-form class="rounded-2xl border border-line bg-paper p-6">
@@ -80,7 +88,7 @@ async function paymentPage() {
 
     try {
       const fd = new FormData(form);
-      const res = await fetch(`/api/orders/${orderId}/confirm-payment`, { method: 'POST', body: fd });
+      const res = await fetch(`/api/orders/${orderRef}/confirm-payment`, { method: 'POST', body: fd });
       if (!res.ok) throw new Error(await res.text());
 
       form.classList.add('hidden');

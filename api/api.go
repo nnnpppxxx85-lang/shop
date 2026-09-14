@@ -43,8 +43,8 @@ func Register(db *sql.DB, adminToken string, adminBot *bot.AdminBot) *http.Serve
 
 	// Заказы и оплата
 	mux.HandleFunc("POST /api/orders", s.createOrder)
-	mux.HandleFunc("GET /api/orders/{id}", s.getOrder)
-	mux.HandleFunc("POST /api/orders/{id}/confirm-payment", s.confirmPayment)
+	mux.HandleFunc("GET /api/orders/{ref}", s.getOrder)
+	mux.HandleFunc("POST /api/orders/{ref}/confirm-payment", s.confirmPayment)
 
 	// Вход в админку
 	mux.HandleFunc("POST /api/admin/login", s.adminLogin)

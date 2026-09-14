@@ -481,6 +481,14 @@ async function adminPage() {
   /* ---------- настройки ---------- */
 
   const settingsForm = root.querySelector('[data-settings-form]');
+  const settingsWarning = root.querySelector('[data-settings-warning]');
+
+  function updateSettingsWarning() {
+    const f = settingsForm.elements;
+    const method = f.paymentMethod.value;
+    const value = method === 'phone' ? f.paymentPhone.value : f.paymentCard.value;
+    settingsWarning.classList.toggle('hidden', value.trim() !== '');
+  }
 
   async function loadSettings() {
     try {
@@ -491,8 +499,13 @@ async function adminPage() {
       settingsForm.elements.consultantTelegram.value = s.consultantTelegram || '';
       const method = s.paymentMethod === 'phone' ? 'phone' : 'card';
       settingsForm.querySelector(`[name=paymentMethod][value="${method}"]`).checked = true;
+      updateSettingsWarning();
     } catch { /* оставим поля пустыми */ }
   }
+
+  settingsForm.querySelectorAll('[name=paymentMethod]').forEach((r) => r.addEventListener('change', updateSettingsWarning));
+  settingsForm.elements.paymentCard.addEventListener('input', updateSettingsWarning);
+  settingsForm.elements.paymentPhone.addEventListener('input', updateSettingsWarning);
 
   settingsForm.addEventListener('submit', async (e) => {
     e.preventDefault();

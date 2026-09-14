@@ -85,7 +85,7 @@ function checkoutPage() {
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       Cart.clear();
-      location.href = '/payment?order=' + data.orderId;
+      location.href = '/payment?order=' + data.token;
     } catch (e2) {
       err.textContent = 'Не удалось создать заказ: ' + e2.message;
       err.classList.remove('hidden');
