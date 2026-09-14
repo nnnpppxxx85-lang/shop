@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Товар — DragonMobile</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/js/core.js"></script>
+  <script defer src="assets/js/layout.js"></script>
+  <script defer src="assets/js/cart.js"></script>
+  <script defer src="assets/js/catalog.js"></script>
+  <script defer src="assets/js/item.js"></script>
+  <script defer src="assets/js/checkout.js"></script>
+  <script defer src="assets/js/payment.js"></script>
+  <script defer src="assets/js/admin.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="item">
+  <div data-site-header></div>
+
+  <main class="min-h-[70vh]">
+    <section class="px-5 pb-12 pt-10 lg:px-8 lg:pb-16 lg:pt-14">
+      <div class="mx-auto max-w-7xl">
+        <nav class="text-xs font-semibold text-subtle" data-breadcrumbs></nav>
+
+        <div class="mt-8 grid gap-10 lg:grid-cols-2" data-item-root>
+          <div class="col-span-full py-20 text-center text-subtle">Загрузка…</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div data-site-footer></div>
+
+  <div data-toast class="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 translate-y-24 items-center gap-4 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-paper opacity-0 transition">
+    <span>Корзина пока пуста</span>
+    <button data-toast-close>×</button>
+  </div>
+</body>
+</html>
