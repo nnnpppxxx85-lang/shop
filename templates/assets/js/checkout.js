@@ -78,6 +78,7 @@ function checkoutPage() {
           email: fd.get('email'),
           address: fd.get('address'),
           comment: fd.get('comment'),
+          referralCode: getReferral(),
           items: Cart.read().map(i => ({ productId: i.id, qty: i.qty })),
         }),
       });

@@ -332,7 +332,8 @@ func (s *Server) adminFolderImages(w http.ResponseWriter, r *http.Request) {
 // GET /api/admin/orders
 func (s *Server) adminOrders(w http.ResponseWriter, r *http.Request) {
 	rows, err := s.DB.Query(`SELECT id, customer_name, phone, COALESCE(address,''), COALESCE(comment,''),
-		total, payment_method, status, created_at FROM orders ORDER BY id DESC LIMIT 200`)
+		total, payment_method, status, created_at, COALESCE(referral_username,''), receipt_path IS NOT NULL
+		FROM orders ORDER BY id DESC LIMIT 200`)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -342,8 +343,9 @@ func (s *Server) adminOrders(w http.ResponseWriter, r *http.Request) {
 	out := []map[string]any{}
 	for rows.Next() {
 		var id, total int
-		var name, phone, address, comment, method, status, created string
-		_ = rows.Scan(&id, &name, &phone, &address, &comment, &total, &method, &status, &created)
+		var name, phone, address, comment, method, status, created, referralUsername string
+		var hasReceipt bool
+		_ = rows.Scan(&id, &name, &phone, &address, &comment, &total, &method, &status, &created, &referralUsername, &hasReceipt)
 		items := []map[string]any{}
 		ir, err := s.DB.Query(`SELECT name, price, qty, line_total FROM order_items WHERE order_id = ?`, id)
 		if err == nil {
@@ -358,6 +360,7 @@ func (s *Server) adminOrders(w http.ResponseWriter, r *http.Request) {
 		out = append(out, map[string]any{
 			"id": id, "name": name, "phone": phone, "address": address, "comment": comment,
 			"total": total, "paymentMethod": method, "status": status, "createdAt": created, "items": items,
+			"referralUsername": referralUsername, "hasReceipt": hasReceipt,
 		})
 	}
 	writeJSON(w, out)

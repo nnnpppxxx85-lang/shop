@@ -106,6 +106,7 @@ async function adminPage() {
       });
       if (tab === 'categories' && !loadedTabs.has('categories')) { loadedTabs.add('categories'); loadCategories(); }
       if (tab === 'orders' && !loadedTabs.has('orders')) { loadedTabs.add('orders'); loadOrders(); }
+      if (tab === 'settings' && !loadedTabs.has('settings')) { loadedTabs.add('settings'); loadSettings(); }
     });
   });
 
@@ -374,7 +375,7 @@ async function adminPage() {
   /* ---------- заказы ---------- */
 
   const ordersList = root.querySelector('[data-orders-list]');
-  const statusLabels = { new: 'Новый', awaiting_payment: 'Ждём оплату', paid: 'Оплачен' };
+  const statusLabels = { new: 'Новый', awaiting_confirmation: 'Ждём проверки', paid: 'Оплачен', cancelled: 'Отменён' };
 
   async function loadOrders() {
     try {
@@ -386,6 +387,8 @@ async function adminPage() {
   }
 
   function orderRow(o) {
+    const statusOptions = Object.keys(statusLabels)
+      .map((key) => `<option value="${key}" ${key === o.status ? 'selected' : ''}>${statusLabels[key]}</option>`).join('');
     return `
       <details class="rounded-2xl border border-line bg-paper p-4">
         <summary class="flex cursor-pointer flex-wrap items-center justify-between gap-3">
@@ -400,14 +403,84 @@ async function adminPage() {
           <div class="text-subtle">Телефон: <span class="font-semibold text-ink">${escapeHtml(o.phone)}</span></div>
           ${o.address ? `<div class="text-subtle">Адрес: <span class="font-semibold text-ink">${escapeHtml(o.address)}</span></div>` : ''}
           ${o.comment ? `<div class="text-subtle">Комментарий: <span class="font-semibold text-ink">${escapeHtml(o.comment)}</span></div>` : ''}
+          ${o.referralUsername ? `<div class="text-subtle">Привёл партнёр: <span class="font-semibold text-ink">@${escapeHtml(o.referralUsername)}</span></div>` : ''}
           <div class="mt-2 grid gap-1">
             ${(o.items || []).map((i) => `<div class="flex justify-between gap-3 text-subtle">
               <span>${escapeHtml(i.name)} × ${i.qty}</span><span class="font-semibold text-ink">${fmtPrice(i.lineTotal)}</span>
             </div>`).join('')}
           </div>
+          <div class="mt-3 flex flex-wrap items-center gap-3 border-t border-line pt-3">
+            <select data-order-status="${o.id}" class="h-10 rounded-full border border-line bg-paper px-4 text-sm font-semibold outline-none focus:border-forest">${statusOptions}</select>
+            ${o.hasReceipt ? `<button type="button" data-order-receipt="${o.id}" class="h-10 rounded-full border border-line px-4 text-sm font-bold transition hover:border-forest/40">Квитанция</button>` : ''}
+          </div>
         </div>
       </details>`;
   }
+
+  ordersList.addEventListener('change', async (e) => {
+    const select = e.target.closest('[data-order-status]');
+    if (!select) return;
+    try {
+      const res = await adminFetch(`/api/admin/orders/${select.dataset.orderStatus}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: select.value }),
+      });
+      if (!res.ok) { say('Ошибка: ' + await res.text()); return; }
+      say('Статус обновлён');
+      await loadOrders();
+    } catch { /* показан экран входа */ }
+  });
+
+  ordersList.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-order-receipt]');
+    if (!btn) return;
+    // окно нужно открыть синхронно в обработчике клика — иначе браузер
+    // считает open() уже не жестом пользователя и молча блокирует его
+    // как всплывающее окно, когда adminFetch резолвится после await
+    const tab = window.open('', '_blank');
+    try {
+      const res = await adminFetch(`/api/admin/orders/${btn.dataset.orderReceipt}/receipt`);
+      if (!res.ok) { tab?.close(); say('Квитанция не найдена'); return; }
+      const blob = await res.blob();
+      if (tab) tab.location.href = URL.createObjectURL(blob);
+    } catch {
+      tab?.close();
+      /* показан экран входа */
+    }
+  });
+
+  /* ---------- настройки ---------- */
+
+  const settingsForm = root.querySelector('[data-settings-form]');
+
+  async function loadSettings() {
+    try {
+      const res = await fetch('/api/settings');
+      const s = await res.json();
+      settingsForm.elements.paymentCard.value = s.paymentCard || '';
+      settingsForm.elements.paymentPhone.value = s.paymentPhone || '';
+      settingsForm.elements.consultantTelegram.value = s.consultantTelegram || '';
+    } catch { /* оставим поля пустыми */ }
+  }
+
+  settingsForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = settingsForm.elements;
+    try {
+      const res = await adminFetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentCard: f.paymentCard.value.trim(),
+          paymentPhone: f.paymentPhone.value.trim(),
+          consultantTelegram: f.consultantTelegram.value.trim(),
+        }),
+      });
+      if (!res.ok) { say('Ошибка: ' + await res.text()); return; }
+      say('Настройки сохранены');
+    } catch { /* показан экран входа */ }
+  });
 
   /* ---------- запуск ---------- */
 

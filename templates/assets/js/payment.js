@@ -1,4 +1,4 @@
-/* payment.js — выбор способа оплаты (доступен только СБП) */
+/* payment.js — оплата переводом на карту/телефон + подтверждение квитанцией */
 
 async function paymentPage() {
   const root = document.querySelector('[data-payment-root]');
@@ -10,11 +10,12 @@ async function paymentPage() {
     return;
   }
 
-  let order;
+  let order, settings;
   try {
     const r = await fetch('/api/orders/' + orderId);
     if (!r.ok) throw new Error();
     order = await r.json();
+    settings = await API.settings().catch(() => ({}));
   } catch {
     root.innerHTML = `<div class="rounded-2xl border border-line bg-paper px-6 py-16 text-center"><p class="text-xl font-bold">Заказ не найден</p></div>`;
     return;
@@ -23,23 +24,35 @@ async function paymentPage() {
   root.innerHTML = `
     <div class="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
       <div class="grid gap-4">
-        <button data-method="sbp" class="flex items-center justify-between gap-4 rounded-2xl border-2 border-forest bg-paper p-6 text-left transition">
-          <span>
-            <span class="block text-lg font-bold">СБП — Система быстрых платежей</span>
-            <span class="mt-1 block text-sm text-subtle">Оплата по QR-коду в приложении вашего банка. Без комиссии.</span>
-          </span>
-          <span class="rounded-full bg-forest px-3 py-1 text-xs font-bold text-paper">Доступно</span>
-        </button>
+        <div class="rounded-2xl border border-line bg-paper p-6">
+          <h2 class="text-lg font-bold">Реквизиты для оплаты</h2>
+          <div class="mt-5 grid gap-4 sm:grid-cols-2">
+            <div class="rounded-xl border border-line bg-canvas p-4">
+              <div class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Номер карты</div>
+              <div class="mt-2 text-lg font-extrabold tabular-nums">${escapeHtml(settings.paymentCard || '—')}</div>
+            </div>
+            <div class="rounded-xl border border-line bg-canvas p-4">
+              <div class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Или по номеру телефона (СБП)</div>
+              <div class="mt-2 text-lg font-extrabold tabular-nums">${escapeHtml(settings.paymentPhone || '—')}</div>
+            </div>
+          </div>
+          <p class="mt-4 text-sm text-subtle">Переведите ${fmtPrice(order.total)} и прикрепите квитанцию (PDF) — после этого заказ уйдёт на проверку менеджеру.</p>
+        </div>
 
-        <button data-method="card" class="flex cursor-not-allowed items-center justify-between gap-4 rounded-2xl border border-line bg-paper p-6 text-left opacity-60">
-          <span>
-            <span class="block text-lg font-bold">Банковская карта</span>
-            <span class="mt-1 block text-sm text-subtle">Visa, Mastercard, МИР — временно недоступно.</span>
-          </span>
-          <span class="rounded-full bg-mist px-3 py-1 text-xs font-bold text-subtle">Недоступно</span>
-        </button>
+        <form data-confirm-form class="rounded-2xl border border-line bg-paper p-6">
+          <h2 class="text-lg font-bold">Подтверждение оплаты</h2>
+          <label class="mt-4 grid gap-2">
+            <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Квитанция об оплате (PDF)</span>
+            <input type="file" name="receipt" accept="application/pdf" required class="rounded-xl border border-line bg-canvas px-4 py-3 text-sm outline-none file:mr-4 file:h-9 file:rounded-full file:border-0 file:bg-forest file:px-4 file:text-sm file:font-bold file:text-paper">
+          </label>
+          <p data-confirm-error class="mt-3 hidden text-sm font-semibold text-forest"></p>
+          <button type="submit" class="mt-5 h-12 w-full rounded-full bg-forest px-6 text-sm font-bold text-paper transition hover:bg-forest-dark">Подтвердить оплату</button>
+        </form>
 
-        <div data-pay-box class="hidden rounded-2xl border border-line bg-paper p-6 text-center"></div>
+        <div data-done class="hidden rounded-2xl border border-line bg-paper p-6 text-center">
+          <p class="text-xl font-bold">Спасибо за покупку!</p>
+          <p class="mt-2 text-sm text-subtle">Менеджер отправит вам в СМС трек номер вашей посылки</p>
+        </div>
       </div>
 
       <aside class="h-max rounded-2xl border border-line bg-paper p-6">
@@ -57,35 +70,28 @@ async function paymentPage() {
       </aside>
     </div>`;
 
-  const box = root.querySelector('[data-pay-box]');
+  const form = root.querySelector('[data-confirm-form]');
+  const err = root.querySelector('[data-confirm-error]');
 
-  root.querySelector('[data-method="card"]').addEventListener('click', () => {
-    toast('Оплата картой временно недоступна — выберите СБП');
-  });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    err.classList.add('hidden');
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true;
+    btn.textContent = 'Отправляем…';
 
-  root.querySelector('[data-method="sbp"]').addEventListener('click', async () => {
-    box.classList.remove('hidden');
-    box.innerHTML = '<p class="text-subtle">Формируем QR-код…</p>';
+    try {
+      const fd = new FormData(form);
+      const res = await fetch(`/api/orders/${orderId}/confirm-payment`, { method: 'POST', body: fd });
+      if (!res.ok) throw new Error(await res.text());
 
-    const r = await fetch(`/api/orders/${orderId}/pay`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ method: 'sbp' }),
-    });
-    const data = await r.json();
-    if (!data.ok) { box.innerHTML = `<p class="font-bold">${escapeHtml(data.error)}</p>`; return; }
-
-    box.innerHTML = `
-      <p class="text-lg font-bold">Отсканируйте QR-код в приложении банка</p>
-      <img src="${escapeHtml(data.qr)}" alt="QR-код СБП" class="mx-auto mt-5 size-60 rounded-xl border border-line">
-      <p class="mt-4 text-sm text-subtle">Сумма: ${fmtPrice(data.total)}</p>
-      <button data-confirm class="mt-6 h-12 w-full rounded-full bg-forest px-6 text-sm font-bold text-paper transition hover:bg-forest-dark">Я оплатил(а)</button>`;
-
-    box.querySelector('[data-confirm]').addEventListener('click', async () => {
-      await fetch(`/api/orders/${orderId}/confirm`, { method: 'POST' });
-      box.innerHTML = `<p class="text-xl font-bold">Оплата принята 🎉</p>
-        <p class="mt-2 text-sm text-subtle">Заказ №${order.id} оплачен. Мы свяжемся с вами для доставки.</p>
-        <a href="/catalog" class="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-forest px-6 text-sm font-bold text-paper transition hover:bg-forest-dark">В каталог</a>`;
-    });
+      form.classList.add('hidden');
+      root.querySelector('[data-done]').classList.remove('hidden');
+    } catch (e2) {
+      err.textContent = 'Не удалось отправить квитанцию: ' + e2.message;
+      err.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Подтвердить оплату';
+    }
   });
 }

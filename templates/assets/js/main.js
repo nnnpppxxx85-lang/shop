@@ -3,6 +3,7 @@
 /* main.js — точка входа */
 
 document.addEventListener('DOMContentLoaded', () => {
+  captureReferral();
   header();
   footer();
 
@@ -12,12 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // категории на главной — 6 штук
     renderHomeCategories();
   }
-  if (page === 'catalog') catalogPage();
+  if (page === 'catalog')  catalogPage();
   if (page === 'item')     itemPage();
   if (page === 'cart')     cartPage();
   if (page === 'checkout') checkoutPage();
   if (page === 'payment')  paymentPage();
   if (page === 'admin')    adminPage();
+  if (page === 'contacts') contactsPage();
 
   Cart.updateBadge();
 
