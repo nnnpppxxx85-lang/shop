@@ -80,6 +80,7 @@ func EnsureSchema(conn *sql.DB) error {
 	defaults := map[string]string{
 		"payment_card":        "2200 0000 0000 0000",
 		"payment_phone":       "+7 900 000-00-00",
+		"payment_method":      "card",
 		"consultant_telegram": "https://t.me/dragonmobile_support",
 	}
 	for key, value := range defaults {

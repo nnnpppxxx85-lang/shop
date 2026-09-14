@@ -31,12 +31,13 @@
           </div>
           <div class="flex items-center gap-3">
             <button data-logout class="hidden h-12 rounded-full border border-line px-6 text-sm font-bold text-subtle transition hover:border-forest/30 hover:text-ink">Выйти</button>
-            <button data-new class="h-12 rounded-full bg-forest px-6 text-sm font-bold text-paper transition hover:bg-forest-dark">+ Новый товар</button>
+            <button data-new class="hidden h-12 rounded-full bg-forest px-6 text-sm font-bold text-paper transition hover:bg-forest-dark">+ Новый товар</button>
           </div>
         </div>
 
         <p data-admin-status class="mt-6 hidden rounded-xl border border-line bg-paper px-4 py-3 text-sm font-semibold"></p>
 
+        <div data-admin-gate class="hidden">
         <div class="mt-10 flex gap-2 overflow-x-auto pb-1" data-admin-tabs>
           <button type="button" data-tab="products" class="whitespace-nowrap rounded-full border border-forest bg-forest px-4 py-2 text-sm font-bold text-paper">Товары</button>
           <button type="button" data-tab="categories" class="whitespace-nowrap rounded-full border border-line bg-paper px-4 py-2 text-sm font-bold text-subtle transition hover:text-ink">Категории</button>
@@ -209,7 +210,20 @@
         <div data-tab-panel="settings" class="mt-8 hidden max-w-xl">
           <form data-settings-form class="grid gap-4 rounded-2xl border border-line bg-paper p-6">
             <h2 class="text-xl font-bold">Реквизиты и контакты</h2>
-            <p class="text-sm text-subtle">Эти данные сразу видны покупателям: номер карты/телефона — на странице оплаты, ссылка на консультанта — на странице товара.</p>
+            <p class="text-sm text-subtle">Эти данные сразу видны покупателям: выбранный способ оплаты — на странице оплаты, ссылка на консультанта — на странице товара.</p>
+
+            <div class="grid gap-3 rounded-xl border border-line bg-canvas p-4" data-payment-method-block>
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Способ оплаты для покупателей</span>
+              <div class="grid gap-2 sm:grid-cols-2">
+                <label class="flex h-11 items-center justify-center gap-2 rounded-lg border border-line bg-paper text-sm font-semibold transition has-[:checked]:border-forest has-[:checked]:bg-forest has-[:checked]:text-paper">
+                  <input type="radio" name="paymentMethod" value="card" class="hidden" checked> Карта
+                </label>
+                <label class="flex h-11 items-center justify-center gap-2 rounded-lg border border-line bg-paper text-sm font-semibold transition has-[:checked]:border-forest has-[:checked]:bg-forest has-[:checked]:text-paper">
+                  <input type="radio" name="paymentMethod" value="phone" class="hidden"> Телефон (СБП)
+                </label>
+              </div>
+              <p class="text-sm text-subtle">На странице оплаты покупатель увидит только выбранный способ — не оба сразу.</p>
+            </div>
 
             <label class="grid gap-2">
               <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Номер карты для оплаты</span>
@@ -228,6 +242,8 @@
 
             <button type="submit" class="mt-2 h-12 rounded-full bg-forest px-6 text-sm font-bold text-paper transition hover:bg-forest-dark">Сохранить</button>
           </form>
+        </div>
+
         </div>
 
       </div>

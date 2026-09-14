@@ -21,20 +21,18 @@ async function paymentPage() {
     return;
   }
 
+  const usePhone = settings.paymentMethod === 'phone';
+  const methodLabel = usePhone ? 'Номер телефона (СБП)' : 'Номер карты';
+  const methodValue = usePhone ? settings.paymentPhone : settings.paymentCard;
+
   root.innerHTML = `
     <div class="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
       <div class="grid gap-4">
         <div class="rounded-2xl border border-line bg-paper p-6">
           <h2 class="text-lg font-bold">Реквизиты для оплаты</h2>
-          <div class="mt-5 grid gap-4 sm:grid-cols-2">
-            <div class="rounded-xl border border-line bg-canvas p-4">
-              <div class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Номер карты</div>
-              <div class="mt-2 text-lg font-extrabold tabular-nums">${escapeHtml(settings.paymentCard || '—')}</div>
-            </div>
-            <div class="rounded-xl border border-line bg-canvas p-4">
-              <div class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Или по номеру телефона (СБП)</div>
-              <div class="mt-2 text-lg font-extrabold tabular-nums">${escapeHtml(settings.paymentPhone || '—')}</div>
-            </div>
+          <div class="mt-5 rounded-xl border border-line bg-canvas p-4">
+            <div class="text-xs font-bold uppercase tracking-[.12em] text-subtle">${methodLabel}</div>
+            <div class="mt-2 text-lg font-extrabold tabular-nums">${escapeHtml(methodValue || '—')}</div>
           </div>
           <p class="mt-4 text-sm text-subtle">Переведите ${fmtPrice(order.total)} и прикрепите квитанцию (PDF) — после этого заказ уйдёт на проверку менеджеру.</p>
         </div>

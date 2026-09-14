@@ -22,10 +22,14 @@ async function adminFetch(url, opts = {}) {
 function showLoginOverlay() {
   const overlay = document.querySelector('[data-admin-login]');
   if (overlay) { overlay.classList.remove('hidden'); overlay.classList.add('flex'); }
+  document.querySelector('[data-admin-gate]')?.classList.add('hidden');
+  document.querySelector('[data-new]')?.classList.add('hidden');
 }
 function hideLoginOverlay() {
   const overlay = document.querySelector('[data-admin-login]');
   if (overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
+  document.querySelector('[data-admin-gate]')?.classList.remove('hidden');
+  document.querySelector('[data-new]')?.classList.remove('hidden');
 }
 
 async function adminPage() {
@@ -469,6 +473,8 @@ async function adminPage() {
       settingsForm.elements.paymentCard.value = s.paymentCard || '';
       settingsForm.elements.paymentPhone.value = s.paymentPhone || '';
       settingsForm.elements.consultantTelegram.value = s.consultantTelegram || '';
+      const method = s.paymentMethod === 'phone' ? 'phone' : 'card';
+      settingsForm.querySelector(`[name=paymentMethod][value="${method}"]`).checked = true;
     } catch { /* оставим поля пустыми */ }
   }
 
@@ -482,6 +488,7 @@ async function adminPage() {
         body: JSON.stringify({
           paymentCard: f.paymentCard.value.trim(),
           paymentPhone: f.paymentPhone.value.trim(),
+          paymentMethod: f.paymentMethod.value,
           consultantTelegram: f.consultantTelegram.value.trim(),
         }),
       });
@@ -501,6 +508,8 @@ async function adminPage() {
 
   if (adminToken()) {
     logoutBtn.classList.remove('hidden');
+    root.querySelector('[data-new]').classList.remove('hidden');
+    root.querySelector('[data-admin-gate]').classList.remove('hidden');
     await bootstrap();
   } else {
     showLoginOverlay();

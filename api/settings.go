@@ -9,6 +9,7 @@ import (
 type Settings struct {
 	PaymentCard        string `json:"paymentCard"`
 	PaymentPhone       string `json:"paymentPhone"`
+	PaymentMethod      string `json:"paymentMethod"`
 	ConsultantTelegram string `json:"consultantTelegram"`
 }
 
@@ -32,9 +33,14 @@ func (s *Server) settingsMap() map[string]string {
 // переводом и ссылка на консультанта в Telegram.
 func (s *Server) settings(w http.ResponseWriter, r *http.Request) {
 	m := s.settingsMap()
+	method := m["payment_method"]
+	if method != "phone" {
+		method = "card"
+	}
 	writeJSON(w, Settings{
 		PaymentCard:        m["payment_card"],
 		PaymentPhone:       m["payment_phone"],
+		PaymentMethod:      method,
 		ConsultantTelegram: m["consultant_telegram"],
 	})
 }
@@ -46,9 +52,14 @@ func (s *Server) adminUpdateSettings(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "неверный запрос", 400)
 		return
 	}
+	method := in.PaymentMethod
+	if method != "phone" {
+		method = "card"
+	}
 	pairs := map[string]string{
 		"payment_card":        strings.TrimSpace(in.PaymentCard),
 		"payment_phone":       strings.TrimSpace(in.PaymentPhone),
+		"payment_method":      method,
 		"consultant_telegram": strings.TrimSpace(in.ConsultantTelegram),
 	}
 	for key, value := range pairs {

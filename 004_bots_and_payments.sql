@@ -37,4 +37,5 @@ CREATE TABLE IF NOT EXISTS contact_messages (
 INSERT IGNORE INTO settings (setting_key, value) VALUES
   ('payment_card', '2200 0000 0000 0000'),
   ('payment_phone', '+7 900 000-00-00'),
+  ('payment_method', 'card'),
   ('consultant_telegram', 'https://t.me/dragonmobile_support');

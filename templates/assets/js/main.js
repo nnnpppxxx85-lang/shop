@@ -1,6 +1,4 @@
-/* main.js — что запускать на какой странице */
-
-/* main.js — точка входа */
+/* main.js — точка входа: что запускать на какой странице */
 
 document.addEventListener('DOMContentLoaded', () => {
   captureReferral();
@@ -36,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('[data-toast]')?.classList.add('translate-y-24', 'opacity-0');
   });
 
-  // reveal-анимации — ВОТ ЭТО БЫЛО ПОТЕРЯНО
+  // reveal-анимации при скролле
   initReveals();
 });
 
