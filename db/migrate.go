@@ -28,6 +28,8 @@ func EnsureSchema(conn *sql.DB) error {
 		{"orders", "referral_partner_id", "INT UNSIGNED DEFAULT NULL"},
 		{"orders", "referral_username", "VARCHAR(191) DEFAULT NULL"},
 		{"orders", "receipt_path", "VARCHAR(255) DEFAULT NULL"},
+		{"products", "storage_options", "TEXT DEFAULT NULL"},
+		{"orders", "access_token", "VARCHAR(64) DEFAULT NULL UNIQUE"},
 	}
 	for _, c := range columns {
 		if err := addColumnIfMissing(conn, c.table, c.column, c.ddl); err != nil {
@@ -77,9 +79,12 @@ func EnsureSchema(conn *sql.DB) error {
 		}
 	}
 
+	// payment_card/payment_phone нарочно пустые: показывать покупателю
+	// придуманный номер карты до того, как админ впишет реальные
+	// реквизиты в настройках, опаснее, чем пустое поле.
 	defaults := map[string]string{
-		"payment_card":        "2200 0000 0000 0000",
-		"payment_phone":       "+7 900 000-00-00",
+		"payment_card":        "",
+		"payment_phone":       "",
 		"payment_method":      "card",
 		"consultant_telegram": "https://t.me/dragonmobile_support",
 	}

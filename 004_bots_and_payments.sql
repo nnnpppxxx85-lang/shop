@@ -34,8 +34,10 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- payment_card/payment_phone нарочно пустые — заполняются в админке
+-- реальными реквизитами перед запуском магазина.
 INSERT IGNORE INTO settings (setting_key, value) VALUES
-  ('payment_card', '2200 0000 0000 0000'),
-  ('payment_phone', '+7 900 000-00-00'),
+  ('payment_card', ''),
+  ('payment_phone', ''),
   ('payment_method', 'card'),
   ('consultant_telegram', 'https://t.me/dragonmobile_support');

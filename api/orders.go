@@ -1,7 +1,10 @@
 package api
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"dragon/db"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,9 +14,22 @@ import (
 	"strings"
 )
 
+// newOrderToken генерирует непредсказуемую ссылку на заказ для покупателя:
+// заказ создаётся анонимно (без логина), поэтому публичные ручки ищут его
+// по этому токену, а не по номеру id — иначе подбором id можно было бы
+// прочитать имя, телефон и состав чужого заказа.
+func newOrderToken() (string, error) {
+	b := make([]byte, 20)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
+
 type orderItemInput struct {
-	ProductID int `json:"productId"`
-	Qty       int `json:"qty"`
+	ProductID    int    `json:"productId"`
+	Qty          int    `json:"qty"`
+	StorageLabel string `json:"storageLabel"`
 }
 
 type orderInput struct {
@@ -63,10 +79,16 @@ func (s *Server) createOrder(w http.ResponseWriter, r *http.Request) {
 
 	referralPartnerID, referralUsername := s.resolveReferral(in.ReferralCode)
 
+	token, err := newOrderToken()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
 	res, err := s.DB.Exec(`INSERT INTO orders
-		(customer_name, phone, email, address, comment, total, payment_method, status, referral_partner_id, referral_username)
-		VALUES (?,?,?,?,?,0,'transfer','new',?,?)`,
-		in.Name, in.Phone, nullStr(in.Email), nullStr(in.Address), nullStr(in.Comment), referralPartnerID, referralUsername)
+		(customer_name, phone, email, address, comment, total, payment_method, status, referral_partner_id, referral_username, access_token)
+		VALUES (?,?,?,?,?,0,'transfer','new',?,?,?)`,
+		in.Name, in.Phone, nullStr(in.Email), nullStr(in.Address), nullStr(in.Comment), referralPartnerID, referralUsername, token)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -81,13 +103,27 @@ func (s *Server) createOrder(w http.ResponseWriter, r *http.Request) {
 		var name, discountType string
 		var price, discountPercent int
 		var bundleBuy, bundleTotal *int
-		err := s.DB.QueryRow(`SELECT name, price, discount_type, discount_percent, bundle_buy_qty, bundle_total_qty
+		var rawStorage sql.NullString
+		err := s.DB.QueryRow(`SELECT name, price, discount_type, discount_percent, bundle_buy_qty, bundle_total_qty, storage_options
 			FROM products WHERE id = ?`, it.ProductID).
-			Scan(&name, &price, &discountType, &discountPercent, &bundleBuy, &bundleTotal)
+			Scan(&name, &price, &discountType, &discountPercent, &bundleBuy, &bundleTotal, &rawStorage)
 		if err != nil {
 			continue
 		}
 		fp := finalPrice(price, discountType, discountPercent)
+
+		// доплату за объём памяти берём из сохранённых в товаре вариантов,
+		// а не из запроса — иначе покупатель мог бы прислать любую скидку
+		if label := strings.TrimSpace(it.StorageLabel); label != "" && rawStorage.Valid {
+			for _, o := range db.DecodeStorageOptions(&rawStorage.String) {
+				if o.Label == label {
+					fp += o.PriceDelta
+					name = name + " · " + o.Label
+					break
+				}
+			}
+		}
+
 		payableQty := it.Qty
 		if discountType == "bundle" {
 			payableQty = bundlePayableQty(it.Qty, bundleBuy, bundleTotal)
@@ -99,16 +135,23 @@ func (s *Server) createOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, _ = s.DB.Exec(`UPDATE orders SET total = ? WHERE id = ?`, total, orderID)
-	writeJSON(w, map[string]any{"ok": true, "orderId": orderID, "total": total})
+	writeJSON(w, map[string]any{"ok": true, "token": token, "total": total})
 }
 
-// GET /api/orders/{id}
+// GET /api/orders/{ref} — публичная ручка для страницы оплаты. Ищем заказ
+// по непредсказуемому access_token, а не по числовому id, чтобы чужой
+// заказ нельзя было прочитать перебором номеров.
 func (s *Server) getOrder(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(r.PathValue("id"))
+	ref := r.PathValue("ref")
+	if ref == "" {
+		http.NotFound(w, r)
+		return
+	}
+	var id int
 	var name, phone, status, method string
 	var total int
-	err := s.DB.QueryRow(`SELECT customer_name, phone, total, payment_method, status FROM orders WHERE id = ?`, id).
-		Scan(&name, &phone, &total, &method, &status)
+	err := s.DB.QueryRow(`SELECT id, customer_name, phone, total, payment_method, status FROM orders WHERE access_token = ?`, ref).
+		Scan(&id, &name, &phone, &total, &method, &status)
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -128,11 +171,12 @@ func (s *Server) getOrder(w http.ResponseWriter, r *http.Request) {
 		"paymentMethod": method, "status": status, "items": items})
 }
 
-// POST /api/orders/{id}/confirm-payment — покупатель прикладывает PDF
+// POST /api/orders/{ref}/confirm-payment — покупатель прикладывает PDF
 // квитанцию о переводе; заказ переходит в статус "ждёт проверки
-// менеджером", а квитанция и данные заказа уходят в админ-бот.
+// менеджером", а квитанция и данные заказа уходят в админ-бот. Заказ, как
+// и в getOrder, ищем по access_token, а не по числовому id.
 func (s *Server) confirmPayment(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(r.PathValue("id"))
+	ref := r.PathValue("ref")
 
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		http.Error(w, "файл слишком большой (максимум 10 МБ)", 400)
@@ -149,8 +193,8 @@ func (s *Server) confirmPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var exists int
-	if err := s.DB.QueryRow(`SELECT 1 FROM orders WHERE id = ?`, id).Scan(&exists); err != nil {
+	var id int
+	if err := s.DB.QueryRow(`SELECT id FROM orders WHERE access_token = ?`, ref).Scan(&id); err != nil {
 		http.NotFound(w, r)
 		return
 	}

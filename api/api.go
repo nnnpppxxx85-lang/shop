@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"dragon/bot"
+	"dragon/db"
 	"encoding/json"
 	"net/http"
 )
@@ -42,8 +43,8 @@ func Register(db *sql.DB, adminToken string, adminBot *bot.AdminBot) *http.Serve
 
 	// Заказы и оплата
 	mux.HandleFunc("POST /api/orders", s.createOrder)
-	mux.HandleFunc("GET /api/orders/{id}", s.getOrder)
-	mux.HandleFunc("POST /api/orders/{id}/confirm-payment", s.confirmPayment)
+	mux.HandleFunc("GET /api/orders/{ref}", s.getOrder)
+	mux.HandleFunc("POST /api/orders/{ref}/confirm-payment", s.confirmPayment)
 
 	// Вход в админку
 	mux.HandleFunc("POST /api/admin/login", s.adminLogin)
@@ -90,22 +91,23 @@ type Category struct {
 }
 
 type Product struct {
-	ID              int      `json:"id"`
-	Slug            string   `json:"slug"`
-	Folder          string   `json:"folder"`
-	Name            string   `json:"name"`
-	Variant         *string  `json:"variant"`
-	Price           int      `json:"price"`
-	MarketPrice     *int     `json:"marketPrice"`
-	DiscountType    string   `json:"discountType"`
-	DiscountPercent int      `json:"discountPercent"`
-	BundleBuyQty    *int     `json:"bundleBuyQty"`
-	BundleTotalQty  *int     `json:"bundleTotalQty"`
-	FinalPrice      int      `json:"finalPrice"`
-	Source          *string  `json:"source"`
-	CategorySlug    string   `json:"categorySlug"`
-	CategoryName    string   `json:"categoryName"`
-	Images          []string `json:"images"`
+	ID              int                `json:"id"`
+	Slug            string             `json:"slug"`
+	Folder          string             `json:"folder"`
+	Name            string             `json:"name"`
+	Variant         *string            `json:"variant"`
+	Price           int                `json:"price"`
+	MarketPrice     *int               `json:"marketPrice"`
+	DiscountType    string             `json:"discountType"`
+	DiscountPercent int                `json:"discountPercent"`
+	BundleBuyQty    *int               `json:"bundleBuyQty"`
+	BundleTotalQty  *int               `json:"bundleTotalQty"`
+	FinalPrice      int                `json:"finalPrice"`
+	Source          *string            `json:"source"`
+	CategorySlug    string             `json:"categorySlug"`
+	CategoryName    string             `json:"categoryName"`
+	Images          []string           `json:"images"`
+	StorageOptions  []db.StorageOption `json:"storageOptions"`
 }
 
 // finalPrice — цена за единицу товара. Для "комплектной" скидки (напр. 2+1=3)
@@ -155,13 +157,25 @@ func (s *Server) categories(w http.ResponseWriter, r *http.Request) {
 const productColumns = `p.id, p.slug, p.folder, p.name, p.variant,
 	             p.price, p.market_price, p.discount_type, p.discount_percent,
 	             p.bundle_buy_qty, p.bundle_total_qty, p.source,
-	             c.slug, c.name`
+	             c.slug, c.name, p.storage_options`
 
 func scanProduct(row interface{ Scan(...any) error }, p *Product) error {
-	return row.Scan(&p.ID, &p.Slug, &p.Folder, &p.Name, &p.Variant,
+	var rawStorage sql.NullString
+	if err := row.Scan(&p.ID, &p.Slug, &p.Folder, &p.Name, &p.Variant,
 		&p.Price, &p.MarketPrice, &p.DiscountType, &p.DiscountPercent,
 		&p.BundleBuyQty, &p.BundleTotalQty, &p.Source,
-		&p.CategorySlug, &p.CategoryName)
+		&p.CategorySlug, &p.CategoryName, &rawStorage); err != nil {
+		return err
+	}
+	p.StorageOptions = decodeStorage(rawStorage)
+	return nil
+}
+
+func decodeStorage(raw sql.NullString) []db.StorageOption {
+	if !raw.Valid {
+		return []db.StorageOption{}
+	}
+	return db.DecodeStorageOptions(&raw.String)
 }
 
 func (s *Server) catalog(w http.ResponseWriter, r *http.Request) {

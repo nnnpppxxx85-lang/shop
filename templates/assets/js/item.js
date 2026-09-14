@@ -24,6 +24,9 @@ async function itemPage() {
     ? p.price
     : (p.marketPrice && p.marketPrice > p.finalPrice ? p.marketPrice : null);
 
+  const storageOptions = p.storageOptions || [];
+  let storageIdx = 0;
+
   crumb.innerHTML = `
     <a href="/catalog" class="hover:text-ink">Каталог</a>
     <span class="mx-2 text-line">/</span>
@@ -37,7 +40,7 @@ async function itemPage() {
       <div class="relative aspect-square overflow-hidden rounded-2xl border border-line bg-warm" data-slider>
         <div class="flex h-full transition-transform duration-300 ease-out" data-track>
           ${images.length
-            ? images.map((src, i) => `<img src="${escapeHtml(src)}" alt="${escapeHtml(p.name)}" data-slide="${i}" class="h-full w-full shrink-0 object-cover">`).join('')
+            ? images.map((src, i) => `<img src="${escapeHtml(src)}" alt="${escapeHtml(p.name)}" data-slide="${i}" class="h-full w-full shrink-0 object-contain p-6">`).join('')
             : '<div class="flex h-full w-full items-center justify-center text-subtle">Нет фото</div>'}
         </div>
 
@@ -54,7 +57,7 @@ async function itemPage() {
         <div class="flex gap-2 overflow-x-auto pb-1" data-thumbs>
           ${images.map((src, i) => `
             <button data-thumb="${i}" class="shrink-0 overflow-hidden rounded-xl border ${i===0?'border-forest':'border-line'} bg-paper transition hover:border-forest/40">
-              <img src="${escapeHtml(src)}" alt="" loading="lazy" class="size-20 object-cover">
+              <img src="${escapeHtml(src)}" alt="" loading="lazy" class="size-20 object-contain p-1">
             </button>`).join('')}
         </div>` : ''}
     </div>
@@ -68,10 +71,19 @@ async function itemPage() {
       </div>
 
       <div class="rounded-2xl border border-line bg-paper p-6">
+        ${storageOptions.length ? `
+        <div class="mb-5 grid gap-2">
+          <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Объём памяти</span>
+          <div class="flex flex-wrap gap-2" data-storage-group>
+            ${storageOptions.map((o, i) => `
+              <button type="button" data-storage-idx="${i}" class="rounded-full border px-4 py-2 text-sm font-semibold transition ${i === 0 ? 'border-forest bg-forest text-paper' : 'border-line bg-paper text-subtle hover:border-forest/30 hover:text-ink'}">${escapeHtml(o.label)}${o.priceDelta ? ` +${fmtPrice(o.priceDelta)}` : ''}</button>`).join('')}
+          </div>
+        </div>` : ''}
+
         <div class="flex items-end justify-between gap-4">
           <div>
-            ${oldPrice ? `<div class="text-sm text-subtle line-through">${fmtPrice(oldPrice)}</div>` : ''}
-            <div class="mt-1 text-3xl font-extrabold">${fmtPrice(p.finalPrice)}</div>
+            ${oldPrice ? `<div data-price-old class="text-sm text-subtle line-through">${fmtPrice(oldPrice)}</div>` : ''}
+            <div data-price-current class="mt-1 text-3xl font-extrabold">${fmtPrice(p.finalPrice)}</div>
           </div>
           ${badge ? `<div class="rounded-full bg-forest/10 px-3 py-1 text-sm font-bold text-forest">${badge}</div>` : ''}
         </div>
@@ -91,8 +103,33 @@ async function itemPage() {
       </ul>
     </div>`;
 
+  const priceCurrent = root.querySelector('[data-price-current]');
+  const priceOld = root.querySelector('[data-price-old]');
+
+  function updatePrice() {
+    const delta = storageOptions[storageIdx]?.priceDelta || 0;
+    priceCurrent.textContent = fmtPrice(p.finalPrice + delta);
+    if (priceOld && oldPrice != null) priceOld.textContent = fmtPrice(oldPrice + delta);
+  }
+
+  root.querySelector('[data-storage-group]')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-storage-idx]');
+    if (!btn) return;
+    storageIdx = +btn.dataset.storageIdx;
+    root.querySelectorAll('[data-storage-idx]').forEach((b, i) => {
+      const active = i === storageIdx;
+      b.classList.toggle('border-forest', active);
+      b.classList.toggle('bg-forest', active);
+      b.classList.toggle('text-paper', active);
+      b.classList.toggle('border-line', !active);
+      b.classList.toggle('bg-paper', !active);
+      b.classList.toggle('text-subtle', !active);
+    });
+    updatePrice();
+  });
+
   root.querySelector('[data-buy]')?.addEventListener('click', () => {
-    Cart.add(p, 1);
+    Cart.add(p, 1, storageOptions[storageIdx] || null);
     toast('Товар добавлен в корзину');
   });
 
