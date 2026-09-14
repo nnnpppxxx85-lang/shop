@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"dragon/db"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,8 +13,9 @@ import (
 )
 
 type orderItemInput struct {
-	ProductID int `json:"productId"`
-	Qty       int `json:"qty"`
+	ProductID    int    `json:"productId"`
+	Qty          int    `json:"qty"`
+	StorageLabel string `json:"storageLabel"`
 }
 
 type orderInput struct {
@@ -81,13 +83,27 @@ func (s *Server) createOrder(w http.ResponseWriter, r *http.Request) {
 		var name, discountType string
 		var price, discountPercent int
 		var bundleBuy, bundleTotal *int
-		err := s.DB.QueryRow(`SELECT name, price, discount_type, discount_percent, bundle_buy_qty, bundle_total_qty
+		var rawStorage sql.NullString
+		err := s.DB.QueryRow(`SELECT name, price, discount_type, discount_percent, bundle_buy_qty, bundle_total_qty, storage_options
 			FROM products WHERE id = ?`, it.ProductID).
-			Scan(&name, &price, &discountType, &discountPercent, &bundleBuy, &bundleTotal)
+			Scan(&name, &price, &discountType, &discountPercent, &bundleBuy, &bundleTotal, &rawStorage)
 		if err != nil {
 			continue
 		}
 		fp := finalPrice(price, discountType, discountPercent)
+
+		// доплату за объём памяти берём из сохранённых в товаре вариантов,
+		// а не из запроса — иначе покупатель мог бы прислать любую скидку
+		if label := strings.TrimSpace(it.StorageLabel); label != "" && rawStorage.Valid {
+			for _, o := range db.DecodeStorageOptions(&rawStorage.String) {
+				if o.Label == label {
+					fp += o.PriceDelta
+					name = name + " · " + o.Label
+					break
+				}
+			}
+		}
+
 		payableQty := it.Qty
 		if discountType == "bundle" {
 			payableQty = bundlePayableQty(it.Qty, bundleBuy, bundleTotal)

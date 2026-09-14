@@ -75,8 +75,14 @@
             </div>
 
             <label class="grid gap-2">
-              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Вариант (цвет, память)</span>
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Вариант (цвет)</span>
               <input name="variant" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+            </label>
+
+            <label class="grid gap-2">
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Объём памяти (по одному варианту в строке: "128 ГБ" или "256 ГБ:7000" — доплата к цене)</span>
+              <textarea name="storageOptions" rows="3" placeholder="128 ГБ:0&#10;256 ГБ:7000&#10;512 ГБ:18000" class="rounded-xl border border-line bg-canvas p-4 text-sm outline-none focus:border-forest"></textarea>
+              <p class="text-xs text-subtle">Если оставить пустым — на странице товара выбор памяти не показывается.</p>
             </label>
 
             <div class="grid gap-4 sm:grid-cols-2">

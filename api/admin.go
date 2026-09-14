@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"dragon/db"
 	"encoding/json"
 	"errors"
@@ -15,21 +16,22 @@ import (
 )
 
 type productInput struct {
-	CategorySlug    string   `json:"categorySlug"`
-	Slug            string   `json:"slug"`
-	Folder          string   `json:"folder"`
-	Name            string   `json:"name"`
-	Variant         string   `json:"variant"`
-	Price           int      `json:"price"`
-	MarketPrice     int      `json:"marketPrice"`
-	DiscountType    string   `json:"discountType"`
-	DiscountPercent int      `json:"discountPercent"`
-	BundleBuyQty    int      `json:"bundleBuyQty"`
-	BundleTotalQty  int      `json:"bundleTotalQty"`
-	Source          string   `json:"source"`
-	IsActive        *bool    `json:"isActive"`
-	SortOrder       int      `json:"sortOrder"`
-	Images          []string `json:"images"`
+	CategorySlug    string             `json:"categorySlug"`
+	Slug            string             `json:"slug"`
+	Folder          string             `json:"folder"`
+	Name            string             `json:"name"`
+	Variant         string             `json:"variant"`
+	Price           int                `json:"price"`
+	MarketPrice     int                `json:"marketPrice"`
+	DiscountType    string             `json:"discountType"`
+	DiscountPercent int                `json:"discountPercent"`
+	BundleBuyQty    int                `json:"bundleBuyQty"`
+	BundleTotalQty  int                `json:"bundleTotalQty"`
+	Source          string             `json:"source"`
+	IsActive        *bool              `json:"isActive"`
+	SortOrder       int                `json:"sortOrder"`
+	Images          []string           `json:"images"`
+	StorageOptions  []db.StorageOption `json:"storageOptions"`
 }
 
 // validate приводит вход к согласованному виду и отклоняет то, что не
@@ -68,6 +70,20 @@ func (in *productInput) validate() error {
 	default:
 		return errors.New("неизвестный тип скидки")
 	}
+
+	cleaned := make([]db.StorageOption, 0, len(in.StorageOptions))
+	for _, o := range in.StorageOptions {
+		label := strings.TrimSpace(o.Label)
+		if label == "" {
+			continue
+		}
+		if o.PriceDelta < 0 {
+			o.PriceDelta = 0
+		}
+		cleaned = append(cleaned, db.StorageOption{Label: label, PriceDelta: o.PriceDelta})
+	}
+	in.StorageOptions = cleaned
+
 	return nil
 }
 
@@ -91,13 +107,15 @@ func (s *Server) adminProducts(w http.ResponseWriter, r *http.Request) {
 	out := []adminProduct{}
 	for rows.Next() {
 		var p adminProduct
+		var rawStorage sql.NullString
 		if err := rows.Scan(&p.ID, &p.Slug, &p.Folder, &p.Name, &p.Variant,
 			&p.Price, &p.MarketPrice, &p.DiscountType, &p.DiscountPercent,
 			&p.BundleBuyQty, &p.BundleTotalQty, &p.Source,
-			&p.CategorySlug, &p.CategoryName, &p.IsActive, &p.SortOrder); err != nil {
+			&p.CategorySlug, &p.CategoryName, &rawStorage, &p.IsActive, &p.SortOrder); err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
+		p.StorageOptions = decodeStorage(rawStorage)
 		p.FinalPrice = finalPrice(p.Price, p.DiscountType, p.DiscountPercent)
 		p.Images = []string{}
 		imgRows, err := s.DB.Query(`SELECT path FROM product_images WHERE product_id = ? ORDER BY sort_order, id`, p.ID)
@@ -156,11 +174,11 @@ func (s *Server) adminCreateProduct(w http.ResponseWriter, r *http.Request) {
 	res, err := s.DB.Exec(`INSERT INTO products
 		(category_id, slug, folder, name, variant, price, market_price,
 		 discount_type, discount_percent, bundle_buy_qty, bundle_total_qty,
-		 source, is_active, sort_order)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+		 source, is_active, sort_order, storage_options)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		catID, in.Slug, in.Folder, in.Name, nullStr(in.Variant), in.Price, nullInt(in.MarketPrice),
 		in.DiscountType, in.DiscountPercent, nullInt(in.BundleBuyQty), nullInt(in.BundleTotalQty),
-		nullStr(in.Source), active, in.SortOrder)
+		nullStr(in.Source), active, in.SortOrder, db.EncodeStorageOptions(in.StorageOptions))
 	if err != nil {
 		writeDBError(w, err, "товар")
 		return
@@ -193,10 +211,10 @@ func (s *Server) adminUpdateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = s.DB.Exec(`UPDATE products SET category_id=?, slug=?, folder=?, name=?, variant=?,
 		price=?, market_price=?, discount_type=?, discount_percent=?, bundle_buy_qty=?, bundle_total_qty=?,
-		source=?, is_active=?, sort_order=? WHERE id=?`,
+		source=?, is_active=?, sort_order=?, storage_options=? WHERE id=?`,
 		catID, in.Slug, in.Folder, in.Name, nullStr(in.Variant), in.Price, nullInt(in.MarketPrice),
 		in.DiscountType, in.DiscountPercent, nullInt(in.BundleBuyQty), nullInt(in.BundleTotalQty),
-		nullStr(in.Source), active, in.SortOrder, id)
+		nullStr(in.Source), active, in.SortOrder, db.EncodeStorageOptions(in.StorageOptions), id)
 	if err != nil {
 		writeDBError(w, err, "товар")
 		return

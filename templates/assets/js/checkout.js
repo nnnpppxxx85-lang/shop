@@ -45,7 +45,7 @@ function checkoutPage() {
         <div class="mt-4 grid gap-3 text-sm">
           ${items.map(i => `<div class="flex justify-between gap-3">
             <span class="text-subtle">
-              ${escapeHtml(i.name)} × ${i.qty}
+              ${escapeHtml(i.name)}${i.storageLabel ? ` <span class="text-xs">(${escapeHtml(i.storageLabel)})</span>` : ''} × ${i.qty}
               ${i.discountType === 'bundle' && i.bundleTotalQty ? `<span class="ml-1 font-bold text-forest">(${i.bundleBuyQty}+${i.bundleTotalQty - i.bundleBuyQty}=${i.bundleTotalQty})</span>` : ''}
             </span>
             <span class="font-bold">${fmtPrice(lineTotal(i))}</span>
@@ -79,7 +79,7 @@ function checkoutPage() {
           address: fd.get('address'),
           comment: fd.get('comment'),
           referralCode: getReferral(),
-          items: Cart.read().map(i => ({ productId: i.id, qty: i.qty })),
+          items: Cart.read().map(i => ({ productId: i.id, qty: i.qty, storageLabel: i.storageLabel || '' })),
         }),
       });
       if (!res.ok) throw new Error(await res.text());

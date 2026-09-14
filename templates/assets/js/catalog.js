@@ -50,7 +50,7 @@ async function catalogPage() {
          class="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-paper transition hover:-translate-y-1 hover:border-forest/30 hover:shadow-soft">
 
         <div class="relative aspect-square overflow-hidden bg-warm">
-          ${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" class="size-full object-cover transition duration-500 group-hover:scale-105">` : ''}
+          ${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" class="size-full object-contain p-4 transition duration-500 group-hover:scale-105">` : ''}
           ${badge ? `<span class="absolute left-4 top-4 rounded-full bg-forest px-3 py-1 text-xs font-bold text-paper">${badge}</span>` : ''}
         </div>
 

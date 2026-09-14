@@ -28,6 +28,7 @@ func EnsureSchema(conn *sql.DB) error {
 		{"orders", "referral_partner_id", "INT UNSIGNED DEFAULT NULL"},
 		{"orders", "referral_username", "VARCHAR(191) DEFAULT NULL"},
 		{"orders", "receipt_path", "VARCHAR(255) DEFAULT NULL"},
+		{"products", "storage_options", "TEXT DEFAULT NULL"},
 	}
 	for _, c := range columns {
 		if err := addColumnIfMissing(conn, c.table, c.column, c.ddl); err != nil {

@@ -4,23 +4,34 @@ const CART_KEY = 'dm_cart';
 
 const Cart = {
   read() {
-    try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
-    catch { return []; }
+    try {
+      const items = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+      // старые записи корзины (до появления выбора памяти) не имеют
+      // ключа — достраиваем его из id, чтобы удаление/изменение
+      // количества по-прежнему находило их
+      return items.map(i => (i.key ? i : Object.assign({}, i, { key: String(i.id) })));
+    } catch { return []; }
   },
   write(items) {
     localStorage.setItem(CART_KEY, JSON.stringify(items));
     Cart.updateBadge();
   },
-  add(product, qty = 1) {
+  // storage — выбранный вариант памяти {label, priceDelta} или null;
+  // разные варианты памяти одного товара живут в корзине отдельными
+  // строками (ключ = id товара + метка памяти)
+  add(product, qty = 1, storage = null) {
     const items = Cart.read();
-    const found = items.find(i => i.id === product.id);
+    const key = String(product.id) + (storage ? '::' + storage.label : '');
+    const found = items.find(i => i.key === key);
     if (found) found.qty += qty;
     else items.push({
+      key,
       id: product.id,
       slug: product.slug,
       name: product.name,
       variant: product.variant || '',
-      price: product.finalPrice ?? product.price,
+      storageLabel: storage ? storage.label : '',
+      price: (product.finalPrice ?? product.price) + (storage ? (storage.priceDelta || 0) : 0),
       image: (product.images && product.images[0]) || '',
       discountType: product.discountType || 'none',
       bundleBuyQty: product.bundleBuyQty || 0,
@@ -29,15 +40,15 @@ const Cart = {
     });
     Cart.write(items);
   },
-  setQty(id, qty) {
+  setQty(key, qty) {
     const items = Cart.read();
-    const it = items.find(i => i.id === id);
+    const it = items.find(i => i.key === key);
     if (!it) return;
     it.qty = Math.max(1, qty);
     Cart.write(items);
   },
-  remove(id) {
-    Cart.write(Cart.read().filter(i => i.id !== id));
+  remove(key) {
+    Cart.write(Cart.read().filter(i => i.key !== key));
   },
   clear() { Cart.write([]); },
   count() { return Cart.read().reduce((s, i) => s + i.qty, 0); },
@@ -86,22 +97,22 @@ function cartPage() {
           ${items.map(i => `
             <div class="flex gap-4 rounded-2xl border border-line bg-paper p-4">
               <div class="size-24 shrink-0 overflow-hidden rounded-xl bg-warm">
-                ${i.image ? `<img src="${escapeHtml(i.image)}" alt="${escapeHtml(i.name)}" class="size-full object-cover">` : ''}
+                ${i.image ? `<img src="${escapeHtml(i.image)}" alt="${escapeHtml(i.name)}" class="size-full object-contain p-2">` : ''}
               </div>
               <div class="flex flex-1 flex-col gap-2">
                 <div class="flex items-start justify-between gap-3">
                   <div>
                     <a href="/item?slug=${encodeURIComponent(i.slug)}" class="text-base font-bold leading-snug hover:text-forest">${escapeHtml(i.name)}</a>
-                    ${i.variant ? `<p class="mt-1 text-xs text-subtle">${escapeHtml(i.variant)}</p>` : ''}
+                    ${(i.variant || i.storageLabel) ? `<p class="mt-1 text-xs text-subtle">${escapeHtml([i.variant, i.storageLabel].filter(Boolean).join(' · '))}</p>` : ''}
                   </div>
-                  <button data-remove="${i.id}" class="text-sm text-subtle transition hover:text-ink">×</button>
+                  <button data-remove="${escapeHtml(i.key)}" class="text-sm text-subtle transition hover:text-ink">×</button>
                 </div>
                 ${i.discountType === 'bundle' && i.bundleTotalQty ? `<p class="text-xs font-semibold text-forest">Акция: ${i.bundleBuyQty}+${i.bundleTotalQty - i.bundleBuyQty}=${i.bundleTotalQty}</p>` : ''}
                 <div class="mt-auto flex items-center justify-between gap-3">
                   <div class="flex items-center gap-2">
-                    <button data-dec="${i.id}" class="flex size-8 items-center justify-center rounded-full border border-line bg-paper font-bold">−</button>
+                    <button data-dec="${escapeHtml(i.key)}" class="flex size-8 items-center justify-center rounded-full border border-line bg-paper font-bold">−</button>
                     <span class="w-8 text-center text-sm font-bold">${i.qty}</span>
-                    <button data-inc="${i.id}" class="flex size-8 items-center justify-center rounded-full border border-line bg-paper font-bold">+</button>
+                    <button data-inc="${escapeHtml(i.key)}" class="flex size-8 items-center justify-center rounded-full border border-line bg-paper font-bold">+</button>
                   </div>
                   <div class="text-lg font-extrabold">${fmtPrice(lineTotal(i))}</div>
                 </div>
@@ -123,9 +134,9 @@ function cartPage() {
     const t = e.target.closest('[data-remove],[data-inc],[data-dec],[data-clear]');
     if (!t) return;
     if (t.dataset.clear !== undefined) Cart.clear();
-    else if (t.dataset.remove) Cart.remove(+t.dataset.remove);
-    else if (t.dataset.inc) Cart.setQty(+t.dataset.inc, (Cart.read().find(i => i.id === +t.dataset.inc)?.qty || 1) + 1);
-    else if (t.dataset.dec) Cart.setQty(+t.dataset.dec, (Cart.read().find(i => i.id === +t.dataset.dec)?.qty || 1) - 1);
+    else if (t.dataset.remove) Cart.remove(t.dataset.remove);
+    else if (t.dataset.inc) Cart.setQty(t.dataset.inc, (Cart.read().find(i => i.key === t.dataset.inc)?.qty || 1) + 1);
+    else if (t.dataset.dec) Cart.setQty(t.dataset.dec, (Cart.read().find(i => i.key === t.dataset.dec)?.qty || 1) - 1);
     render();
   });
 

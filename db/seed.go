@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type seedCategory struct {
@@ -19,6 +20,19 @@ type seedProduct struct {
 	discountPercent                           int
 	bundleBuy, bundleTotal                    int
 	sortOrder                                 int
+	storageOptions                            []StorageOption
+}
+
+// storageOptions — короткий конструктор варианта памяти для литералов
+// в списке товаров ниже: storageOptions("128 ГБ", 0, "256 ГБ", 5000, ...).
+func storage(pairs ...any) []StorageOption {
+	out := make([]StorageOption, 0, len(pairs)/2)
+	for i := 0; i+1 < len(pairs); i += 2 {
+		label, _ := pairs[i].(string)
+		delta, _ := pairs[i+1].(int)
+		out = append(out, StorageOption{Label: label, PriceDelta: delta})
+	}
+	return out
 }
 
 // SyncCatalog приводит каталог в соответствие с этим файлом при каждом
@@ -50,6 +64,18 @@ func SyncCatalog(conn *sql.DB) error {
 		}
 	}
 
+	// Варианты объёма памяти по линейкам iPhone — доплата к базовой цене
+	// (см. добавленные ниже товары). Общие для всех цветов одной модели.
+	storage14ProMax := storage("128 ГБ", 0, "256 ГБ", 7000, "512 ГБ", 18000)
+	storage15 := storage("128 ГБ", 0, "256 ГБ", 7000, "512 ГБ", 18000)
+	storage15Pro := storage("128 ГБ", 0, "256 ГБ", 8000, "512 ГБ", 20000, "1 ТБ", 32000)
+	storage16 := storage("128 ГБ", 0, "256 ГБ", 7000, "512 ГБ", 18000)
+	storage16Pro := storage("128 ГБ", 0, "256 ГБ", 8000, "512 ГБ", 20000, "1 ТБ", 32000)
+	storage16ProMax := storage("256 ГБ", 0, "512 ГБ", 13000, "1 ТБ", 26000)
+	storage17 := storage("256 ГБ", 0, "512 ГБ", 15000)
+	storage17ProMax := storage("256 ГБ", 0, "512 ГБ", 18000, "1 ТБ", 36000)
+	storageAir := storage("256 ГБ", 0, "512 ГБ", 15000, "1 ТБ", 30000)
+
 	products := []seedProduct{
 		{categorySlug: "iphone", slug: "iphone-14-128-gb-blue", folder: "iphone_14_blue", name: "iPhone 14", variant: "128 ГБ · Blue", price: 38990, marketPrice: 39900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 0},
 		{categorySlug: "iphone", slug: "iphone-14-128-gb-pink", folder: "iphone_14_pink", name: "iPhone 14", variant: "128 ГБ · Pink", price: 38990, marketPrice: 39900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 1},
@@ -58,6 +84,45 @@ func SyncCatalog(conn *sql.DB) error {
 		{categorySlug: "iphone", slug: "apple-iphone-17e-256-gb-black", folder: "Apple_iPhone_17e_black", name: "Apple iPhone 17e", variant: "256 ГБ · Black", price: 58400, marketPrice: 59500, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 4},
 		{categorySlug: "iphone", slug: "apple-iphone-17e-256-gb-pink", folder: "Apple_iPhone_17e_pink", name: "Apple iPhone 17e", variant: "256 ГБ · Pink", price: 58400, marketPrice: 59500, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 5},
 		{categorySlug: "iphone", slug: "apple-iphone-17e-256-gb-white", folder: "Apple_iPhone_17e_white", name: "Apple iPhone 17e", variant: "256 ГБ · White", price: 58400, marketPrice: 59500, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 6},
+
+		{categorySlug: "iphone", slug: "iphone-14-pro-max-deep-purple", folder: "iPhone_14_Pro_Max_Deep_Purple", name: "iPhone 14 Pro Max", variant: "Deep Purple", price: 64990, marketPrice: 66900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 7, storageOptions: storage14ProMax},
+		{categorySlug: "iphone", slug: "iphone-14-pro-max-gold", folder: "iPhone_14_Pro_Max_Gold", name: "iPhone 14 Pro Max", variant: "Gold", price: 64990, marketPrice: 66900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 8, storageOptions: storage14ProMax},
+		{categorySlug: "iphone", slug: "iphone-14-pro-max-silver", folder: "iPhone_14_Pro_Max_Silver", name: "iPhone 14 Pro Max", variant: "Silver", price: 64990, marketPrice: 66900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 9, storageOptions: storage14ProMax},
+		{categorySlug: "iphone", slug: "iphone-14-pro-max-space-black", folder: "iPhone_14_Pro_Max_Space_Black", name: "iPhone 14 Pro Max", variant: "Space Black", price: 64990, marketPrice: 66900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 10, storageOptions: storage14ProMax},
+
+		{categorySlug: "iphone", slug: "iphone-15-black", folder: "iPhone_15_Black", name: "iPhone 15", variant: "Black", price: 44990, marketPrice: 46900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 11, storageOptions: storage15},
+		{categorySlug: "iphone", slug: "iphone-15-blue", folder: "iPhone_15_Blue", name: "iPhone 15", variant: "Blue", price: 44990, marketPrice: 46900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 12, storageOptions: storage15},
+		{categorySlug: "iphone", slug: "iphone-15-green", folder: "iPhone_15_Green", name: "iPhone 15", variant: "Green", price: 44990, marketPrice: 46900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 13, storageOptions: storage15},
+		{categorySlug: "iphone", slug: "iphone-15-pink", folder: "iPhone_15_Pink", name: "iPhone 15", variant: "Pink", price: 44990, marketPrice: 46900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 14, storageOptions: storage15},
+		{categorySlug: "iphone", slug: "iphone-15-yellow", folder: "iPhone_15_Yellow", name: "iPhone 15", variant: "Yellow", price: 44990, marketPrice: 46900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 15, storageOptions: storage15},
+		{categorySlug: "iphone", slug: "iphone-15-pro-blue-titanium", folder: "iPhone_15_Pro_Blue_Titanium", name: "iPhone 15 Pro", variant: "Blue Titanium", price: 79990, marketPrice: 82900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 16, storageOptions: storage15Pro},
+
+		{categorySlug: "iphone", slug: "iphone-16-black", folder: "iPhone_16_Black", name: "iPhone 16", variant: "Black", price: 54990, marketPrice: 56900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 17, storageOptions: storage16},
+		{categorySlug: "iphone", slug: "iphone-16-pink", folder: "iPhone_16_Pink", name: "iPhone 16", variant: "Pink", price: 54990, marketPrice: 56900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 18, storageOptions: storage16},
+		{categorySlug: "iphone", slug: "iphone-16-teal", folder: "iPhone_16_Teal", name: "iPhone 16", variant: "Teal", price: 54990, marketPrice: 56900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 19, storageOptions: storage16},
+		{categorySlug: "iphone", slug: "iphone-16-ultramarine", folder: "iPhone_16_Ultramarine", name: "iPhone 16", variant: "Ultramarine", price: 54990, marketPrice: 56900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 20, storageOptions: storage16},
+		{categorySlug: "iphone", slug: "iphone-16-white", folder: "iPhone_16_White", name: "iPhone 16", variant: "White", price: 54990, marketPrice: 56900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 21, storageOptions: storage16},
+		{categorySlug: "iphone", slug: "iphone-16-pro-black-titanium", folder: "iPhone_16_Pro_Black_Titanium", name: "iPhone 16 Pro", variant: "Black Titanium", price: 94990, marketPrice: 97900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 22, storageOptions: storage16Pro},
+		{categorySlug: "iphone", slug: "iphone-16-pro-natural-titanium", folder: "iPhone_16_Pro_Natural_Titanium", name: "iPhone 16 Pro", variant: "Natural Titanium", price: 94990, marketPrice: 97900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 23, storageOptions: storage16Pro},
+		{categorySlug: "iphone", slug: "iphone-16-pro-white-titanium", folder: "iPhone_16_Pro_White_Titanium", name: "iPhone 16 Pro", variant: "White Titanium", price: 94990, marketPrice: 97900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 24, storageOptions: storage16Pro},
+		{categorySlug: "iphone", slug: "iphone-16-pro-max-black-titanium", folder: "iPhone_16_Pro_Max_Black_Titanium", name: "iPhone 16 Pro Max", variant: "Black Titanium", price: 109990, marketPrice: 113900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 25, storageOptions: storage16ProMax},
+		{categorySlug: "iphone", slug: "iphone-16-pro-max-desert-titanium", folder: "iPhone_16_Pro_Max_Desert_Titanium", name: "iPhone 16 Pro Max", variant: "Desert Titanium", price: 109990, marketPrice: 113900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 26, storageOptions: storage16ProMax},
+		{categorySlug: "iphone", slug: "iphone-16-pro-max-white-titanium", folder: "iPhone_16_Pro_Max_White_Titanium", name: "iPhone 16 Pro Max", variant: "White Titanium", price: 109990, marketPrice: 113900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 27, storageOptions: storage16ProMax},
+
+		{categorySlug: "iphone", slug: "iphone-17-black", folder: "iPhone_17_Black", name: "iPhone 17", variant: "Black", price: 79990, marketPrice: 82900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 28, storageOptions: storage17},
+		{categorySlug: "iphone", slug: "iphone-17-lavender", folder: "iPhone_17_Lavender", name: "iPhone 17", variant: "Lavender", price: 79990, marketPrice: 82900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 29, storageOptions: storage17},
+		{categorySlug: "iphone", slug: "iphone-17-mist-blue", folder: "iPhone_17_Mist_Blue", name: "iPhone 17", variant: "Mist Blue", price: 79990, marketPrice: 82900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 30, storageOptions: storage17},
+		{categorySlug: "iphone", slug: "iphone-17-sage", folder: "iPhone_17_Sage", name: "iPhone 17", variant: "Sage", price: 79990, marketPrice: 82900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 31, storageOptions: storage17},
+		{categorySlug: "iphone", slug: "iphone-17-white", folder: "iPhone_17_White", name: "iPhone 17", variant: "White", price: 79990, marketPrice: 82900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 32, storageOptions: storage17},
+		{categorySlug: "iphone", slug: "iphone-17-pro-max-deep-blue", folder: "iPhone_17_Pro_Max_Deep_Blue", name: "iPhone 17 Pro Max", variant: "Deep Blue", price: 149990, marketPrice: 154900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 33, storageOptions: storage17ProMax},
+		{categorySlug: "iphone", slug: "iphone-17-pro-max-orange", folder: "iPhone_17_Pro_Max_Orange", name: "iPhone 17 Pro Max", variant: "Orange", price: 149990, marketPrice: 154900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 34, storageOptions: storage17ProMax},
+		{categorySlug: "iphone", slug: "iphone-17-pro-max-silver", folder: "iPhone_17_Pro_Max_Silver", name: "iPhone 17 Pro Max", variant: "Silver", price: 149990, marketPrice: 154900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 35, storageOptions: storage17ProMax},
+
+		{categorySlug: "iphone", slug: "iphone-air-cloud-white", folder: "iPhone_Air_Cloud_White", name: "iPhone Air", variant: "Cloud White", price: 99990, marketPrice: 103900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 36, storageOptions: storageAir},
+		{categorySlug: "iphone", slug: "iphone-air-light-gold", folder: "iPhone_Air_Light_Gold", name: "iPhone Air", variant: "Light Gold", price: 99990, marketPrice: 103900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 37, storageOptions: storageAir},
+		{categorySlug: "iphone", slug: "iphone-air-sky-blue", folder: "iPhone_Air_Sky_Blue", name: "iPhone Air", variant: "Sky Blue", price: 99990, marketPrice: 103900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 38, storageOptions: storageAir},
+		{categorySlug: "iphone", slug: "iphone-air-space-black", folder: "iPhone_Air_Space_Black", name: "iPhone Air", variant: "Space Black", price: 99990, marketPrice: 103900, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 39, storageOptions: storageAir},
+
 		{categorySlug: "macbook", slug: "macbook-air-13-m5-midnight", folder: "MacBook_Air_13_M5_Midnigh", name: "MacBook Air 13″ M5", variant: "Midnight", price: 126990, marketPrice: 129990, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 0},
 		{categorySlug: "macbook", slug: "macbook-air-13-m5-starlight", folder: "MacBook_Air_13_M5_Starlight", name: "MacBook Air 13″ M5", variant: "Starlight", price: 126990, marketPrice: 129990, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 1},
 		{categorySlug: "macbook", slug: "macbook-air-13-m5-sky-blue", folder: "MacBook_Air_13_M5_blue", name: "MacBook Air 13″ M5", variant: "Sky Blue", price: 126990, marketPrice: 129990, discountType: "none", discountPercent: 0, bundleBuy: 0, bundleTotal: 0, sortOrder: 2},
@@ -174,8 +239,8 @@ func SyncCatalog(conn *sql.DB) error {
 			`INSERT INTO products
 				(category_id, slug, folder, name, variant, price, market_price,
 				 discount_type, discount_percent, bundle_buy_qty, bundle_total_qty,
-				 source, is_active, sort_order)
-			 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?)
+				 source, is_active, sort_order, storage_options)
+			 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)
 			 ON DUPLICATE KEY UPDATE
 				category_id = VALUES(category_id),
 				folder = VALUES(folder),
@@ -188,10 +253,11 @@ func SyncCatalog(conn *sql.DB) error {
 				bundle_buy_qty = VALUES(bundle_buy_qty),
 				bundle_total_qty = VALUES(bundle_total_qty),
 				sort_order = VALUES(sort_order),
+				storage_options = VALUES(storage_options),
 				id = LAST_INSERT_ID(id)`,
 			catID, p.slug, p.folder, p.name, variant, p.price, marketPrice,
 			p.discountType, p.discountPercent, bundleBuy, bundleTotal,
-			nil, p.sortOrder,
+			nil, p.sortOrder, EncodeStorageOptions(p.storageOptions),
 		)
 		if err != nil {
 			log.Printf("seed: не удалось добавить %s: %v", p.slug, err)
@@ -220,9 +286,11 @@ func SyncCatalog(conn *sql.DB) error {
 	return nil
 }
 
-// ScanFolderImages возвращает пути к картинкам в templates/assets/<folder>,
-// отсортированные по номеру в имени файла. Используется как сидером, так
-// и ручкой админки, чтобы обе стороны видели одинаковый список.
+// ScanFolderImages возвращает пути к картинкам в templates/assets/<folder>.
+// Файл с "main" в имени (например, "iphone16white_main.jpg") всегда идёт
+// первым — это и есть обложка товара на карточке в каталоге. Остальные
+// фото идут следом, отсортированные по номеру в имени. Используется как
+// сидером, так и ручкой админки, чтобы обе стороны видели одинаковый список.
 func ScanFolderImages(folder string) ([]string, error) {
 	dir := filepath.Join("templates", "assets", folder)
 	entries, err := os.ReadDir(dir)
@@ -237,11 +305,22 @@ func ScanFolderImages(folder string) ([]string, error) {
 		names = append(names, e.Name())
 	}
 	names = NaturalSortStrings(names)
-	out := make([]string, 0, len(names))
+
+	var mainNames, restNames []string
 	for _, n := range names {
-		if isImageFile(n) {
-			out = append(out, "/assets/"+folder+"/"+n)
+		if !isImageFile(n) {
+			continue
 		}
+		if isMainImage(n) {
+			mainNames = append(mainNames, n)
+		} else {
+			restNames = append(restNames, n)
+		}
+	}
+
+	out := make([]string, 0, len(mainNames)+len(restNames))
+	for _, n := range append(mainNames, restNames...) {
+		out = append(out, "/assets/"+folder+"/"+n)
 	}
 	return out, nil
 }
@@ -254,4 +333,11 @@ func isImageFile(name string) bool {
 	default:
 		return false
 	}
+}
+
+// isMainImage узнаёт обложку товара по имени файла: "..._main.ext" или
+// "...-main.ext" (без учёта регистра).
+func isMainImage(name string) bool {
+	base := strings.ToLower(strings.TrimSuffix(name, filepath.Ext(name)))
+	return base == "main" || strings.HasSuffix(base, "_main") || strings.HasSuffix(base, "-main")
 }

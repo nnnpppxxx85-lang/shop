@@ -139,6 +139,20 @@ async function adminPage() {
     } catch { /* пользователь ещё не вошёл — список появится после входа */ }
   }
 
+  function parseStorageOptions(text) {
+    return text.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
+      const idx = line.lastIndexOf(':');
+      if (idx === -1) return { label: line, priceDelta: 0 };
+      const label = line.slice(0, idx).trim();
+      const delta = parseInt(line.slice(idx + 1).trim(), 10);
+      return { label, priceDelta: Number.isFinite(delta) ? delta : 0 };
+    }).filter((o) => o.label);
+  }
+
+  function formatStorageOptions(opts) {
+    return (opts || []).map((o) => (o.priceDelta ? `${o.label}:${o.priceDelta}` : o.label)).join('\n');
+  }
+
   function productMatches(p, q) {
     return `${p.name} ${p.slug} ${p.categoryName} ${p.variant || ''}`.toLowerCase().includes(q);
   }
@@ -156,7 +170,7 @@ async function adminPage() {
       <div class="min-w-0 flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4 sm:flex-row sm:items-center sm:gap-4">
         <div class="flex min-w-0 items-center gap-4">
           <div class="size-16 shrink-0 overflow-hidden rounded-xl bg-warm">
-            ${p.images && p.images[0] ? `<img src="${escapeHtml(p.images[0])}" alt="" class="size-full object-cover">` : ''}
+            ${p.images && p.images[0] ? `<img src="${escapeHtml(p.images[0])}" alt="" class="size-full object-contain p-1">` : ''}
           </div>
           <div class="min-w-0 flex-1">
             <div class="truncate text-base font-bold">${escapeHtml(p.name)}</div>
@@ -213,6 +227,7 @@ async function adminPage() {
     form.elements.sortOrder.value = p ? p.sortOrder : 0;
     form.elements.isActive.checked = p ? !!p.isActive : true;
     form.elements.images.value = p ? (p.images || []).join('\n') : '';
+    form.elements.storageOptions.value = p ? formatStorageOptions(p.storageOptions) : '';
 
     const type = p ? p.discountType || 'none' : 'none';
     form.querySelector(`[name=discountType][value="${type}"]`).checked = true;
@@ -275,6 +290,7 @@ async function adminPage() {
       sortOrder: +f.sortOrder.value || 0,
       isActive: f.isActive.checked,
       images: f.images.value.split('\n').map((s) => s.trim()).filter(Boolean),
+      storageOptions: parseStorageOptions(f.storageOptions.value),
     };
     const id = f.id.value;
     try {
