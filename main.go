@@ -34,7 +34,7 @@ func main() {
 	if err := db.EnsureSchema(conn); err != nil {
 		log.Fatal("миграции: ", err)
 	}
-	if err := db.SeedDemoData(conn); err != nil {
+	if err := db.SyncCatalog(conn); err != nil {
 		log.Println("seed:", err)
 	}
 

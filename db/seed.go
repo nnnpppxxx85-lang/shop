@@ -21,19 +21,14 @@ type seedProduct struct {
 	sortOrder                                 int
 }
 
-// SeedDemoData наполняет пустую базу стартовым каталогом на основе папок
-// с фото, которые уже лежат в templates/assets — чтобы после первого
-// запуска сайт сразу было на чём смотреть. Если товары уже есть (админ
-// начал вести каталог сам), сидер ничего не делает.
-func SeedDemoData(conn *sql.DB) error {
-	var count int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM products`).Scan(&count); err != nil {
-		return err
-	}
-	if count > 0 {
-		return nil
-	}
-
+// SyncCatalog приводит каталог в соответствие с этим файлом при каждом
+// запуске сервера: добавляет отсутствующие категории/товары и обновляет
+// название/цену/скидку/фото уже существующих (по уникальному slug) — так
+// обновление кода (например, новые цены или новые папки с фото) всегда
+// доезжает до уже развёрнутой базы, без ручных SQL-команд. Поле
+// is_active не трогается при обновлении, чтобы не возвращать в каталог
+// товар, который админ явно скрыл через панель.
+func SyncCatalog(conn *sql.DB) error {
 	categories := []seedCategory{
 		{"iphone", "iPhone", "01", "Смартфоны Apple", 1},
 		{"macbook", "MacBook", "02", "Ноутбуки Apple", 2},
@@ -180,7 +175,20 @@ func SeedDemoData(conn *sql.DB) error {
 				(category_id, slug, folder, name, variant, price, market_price,
 				 discount_type, discount_percent, bundle_buy_qty, bundle_total_qty,
 				 source, is_active, sort_order)
-			 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?)`,
+			 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?)
+			 ON DUPLICATE KEY UPDATE
+				category_id = VALUES(category_id),
+				folder = VALUES(folder),
+				name = VALUES(name),
+				variant = VALUES(variant),
+				price = VALUES(price),
+				market_price = VALUES(market_price),
+				discount_type = VALUES(discount_type),
+				discount_percent = VALUES(discount_percent),
+				bundle_buy_qty = VALUES(bundle_buy_qty),
+				bundle_total_qty = VALUES(bundle_total_qty),
+				sort_order = VALUES(sort_order),
+				id = LAST_INSERT_ID(id)`,
 			catID, p.slug, p.folder, p.name, variant, p.price, marketPrice,
 			p.discountType, p.discountPercent, bundleBuy, bundleTotal,
 			nil, p.sortOrder,
@@ -196,6 +204,10 @@ func SeedDemoData(conn *sql.DB) error {
 			log.Printf("seed: нет фото для %s (%s): %v", p.slug, p.folder, err)
 			continue
 		}
+		if _, err := conn.Exec(`DELETE FROM product_images WHERE product_id = ?`, productID); err != nil {
+			log.Printf("seed: не удалось очистить фото %s: %v", p.slug, err)
+			continue
+		}
 		for j, img := range images {
 			_, _ = conn.Exec(
 				`INSERT INTO product_images (product_id, path, sort_order) VALUES (?,?,?)`,
@@ -204,7 +216,7 @@ func SeedDemoData(conn *sql.DB) error {
 		}
 	}
 
-	log.Printf("seed: добавлен стартовый каталог (%d товаров) из templates/assets", len(products))
+	log.Printf("seed: каталог синхронизирован (%d товаров) из templates/assets", len(products))
 	return nil
 }
 
