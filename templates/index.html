@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>DragonMobile — магазин электроники в Москве</title>
+  <meta name="description" content="DragonMobile — премиальный магазин оригинальной электроники Apple, Dyson и игровых консолей в Москве.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/js/core.js"></script>
+  <script defer src="assets/js/layout.js"></script>
+  <script defer src="assets/js/cart.js"></script>
+  <script defer src="assets/js/catalog.js"></script>
+  <script defer src="assets/js/item.js"></script>
+  <script defer src="assets/js/checkout.js"></script>
+  <script defer src="assets/js/payment.js"></script>
+  <script defer src="assets/js/admin.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+
+<body data-page="home">
+  <div data-site-header></div>
+
+  <main>
+
+    <!-- ========== HERO ========== -->
+    <section class="dragon-mark overflow-hidden px-5 pb-10 pt-14 lg:px-8 lg:pb-18 lg:pt-24">
+      <div class="mx-auto max-w-7xl">
+        <div class="max-w-4xl">
+
+          <p class="reveal text-xs font-bold uppercase tracking-[.18em] text-forest">
+            Техника, выбранная с точностью
+          </p>
+
+          <h1 class="reveal mt-6 text-5xl font-extrabold leading-[.98] sm:text-7xl lg:text-[96px]">
+            Технологии.<br>
+            <span class="text-forest">Без компромиссов.</span>
+          </h1>
+
+          <p class="reveal mt-7 max-w-xl text-base leading-7 text-subtle sm:text-lg">
+            Оригинальная электроника и спокойный сервис — от выбора до получения.
+          </p>
+
+          <div class="reveal mt-9 flex flex-wrap gap-3">
+            <a href="/catalog"
+               class="inline-flex items-center gap-3 rounded-full bg-forest px-6 py-3.5 text-sm font-bold text-paper transition hover:bg-forest-dark">
+              Смотреть каталог <span>→</span>
+            </a>
+            <a href="/delivery"
+               class="rounded-full border border-line bg-paper px-6 py-3.5 text-sm font-bold transition hover:border-forest/30">
+              Доставка по Москве
+            </a>
+          </div>
+        </div>
+
+        <div class="mt-14 grid grid-cols-3 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:max-w-2xl">
+          <div class="bg-paper p-5">
+            <div class="text-2xl font-extrabold">100%</div>
+            <div class="mt-1 text-xs text-subtle">оригинальная техника</div>
+          </div>
+          <div class="bg-paper p-5">
+            <div class="text-2xl font-extrabold">1 день</div>
+            <div class="mt-1 text-xs text-subtle">доставка по Москве</div>
+          </div>
+          <div class="bg-paper p-5">
+            <div class="text-2xl font-extrabold">365</div>
+            <div class="mt-1 text-xs text-subtle">дней гарантии</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== SPECIAL PROGRAM BANNER ========== -->
+    <section class="px-5 py-8 lg:px-8">
+      <div class="reveal mx-auto max-w-7xl overflow-hidden rounded-2xl bg-forest text-paper">
+        <div class="relative px-6 py-8 sm:px-10 lg:flex lg:items-center lg:justify-between lg:px-12 lg:py-10">
+
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[.15em] text-paper/55">
+              Специальная программа
+            </p>
+            <h2 class="mt-3 text-3xl font-extrabold sm:text-4xl">
+              Скидки участникам СВО
+            </h2>
+            <p class="mt-3 max-w-2xl text-sm leading-6 text-paper/70">
+              Особые условия на покупки. Подробности и размер скидки уточняйте у консультанта.
+            </p>
+          </div>
+
+          <a href="/contacts"
+             class="mt-6 inline-flex shrink-0 items-center gap-3 rounded-full bg-paper px-6 py-3.5 text-sm font-bold text-forest lg:mt-0">
+            Узнать условия <span>→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== CATEGORIES ========== -->
+    <section class="px-5 py-18 lg:px-8 lg:py-24">
+      <div class="mx-auto max-w-7xl">
+
+        <div class="flex items-end justify-between gap-5">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[.15em] text-forest">Каталог</p>
+            <h2 class="mt-3 text-4xl font-extrabold sm:text-5xl">Выберите категорию</h2>
+          </div>
+          <a href="catalog.html" class="hidden text-sm font-bold text-forest sm:block">
+            Все категории →
+          </a>
+        </div>
+
+        <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-categories></div>
+
+        <a href="catalog.html" class="mt-6 inline-flex text-sm font-bold text-forest sm:hidden">
+          Все категории →
+        </a>
+      </div>
+    </section>
+
+    <!-- ========== ABOUT / VALUES ========== -->
+    <section class="bg-warm px-5 py-18 lg:px-8 lg:py-24">
+      <div class="mx-auto grid max-w-7xl gap-10 lg:grid-cols-2 lg:items-end">
+
+        <div class="reveal">
+          <p class="text-xs font-bold uppercase tracking-[.15em] text-forest">DragonMobile</p>
+          <h2 class="mt-4 text-4xl font-extrabold leading-tight sm:text-5xl">
+            Спокойно. Честно.<br>По существу.
+          </h2>
+        </div>
+
+        <div class="reveal grid gap-6 sm:grid-cols-2">
+          <div class="border-t border-ink/15 pt-5">
+            <h3 class="font-bold">Проверяем каждое устройство</h3>
+            <p class="mt-2 text-sm leading-6 text-subtle">
+              Комплектация и состояние контролируются до передачи заказа.
+            </p>
+          </div>
+          <div class="border-t border-ink/15 pt-5">
+            <h3 class="font-bold">Помогаем с выбором</h3>
+            <p class="mt-2 text-sm leading-6 text-subtle">
+              Без лишних обещаний — только нужные характеристики и понятные условия.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div data-site-footer></div>
+
+  <!-- ========== TOAST ========== -->
+  <div data-toast
+       class="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 translate-y-24 items-center gap-4 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-paper opacity-0 shadow-soft transition">
+    <span>Корзина пока пуста</span>
+    <button data-toast-close aria-label="Закрыть">×</button>
+  </div>
+
+</body>
+</html>

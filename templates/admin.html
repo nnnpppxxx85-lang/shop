@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Админ-панель — DragonMobile</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/js/core.js"></script>
+  <script defer src="assets/js/layout.js"></script>
+  <script defer src="assets/js/cart.js"></script>
+  <script defer src="assets/js/catalog.js"></script>
+  <script defer src="assets/js/item.js"></script>
+  <script defer src="assets/js/checkout.js"></script>
+  <script defer src="assets/js/payment.js"></script>
+  <script defer src="assets/js/admin.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="admin">
+  <div data-site-header></div>
+
+  <main class="min-h-[70vh]" data-admin-root>
+    <section class="px-5 pb-20 pt-14 lg:px-8 lg:pb-28 lg:pt-20">
+      <div class="mx-auto max-w-7xl">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[.15em] text-forest">Управление каталогом</p>
+            <h1 class="mt-4 text-5xl font-extrabold sm:text-6xl">Админ-панель</h1>
+          </div>
+          <div class="flex items-center gap-3">
+            <button data-logout class="hidden h-12 rounded-full border border-line px-6 text-sm font-bold text-subtle transition hover:border-forest/30 hover:text-ink">Выйти</button>
+            <button data-new class="h-12 rounded-full bg-forest px-6 text-sm font-bold text-paper transition hover:bg-forest-dark">+ Новый товар</button>
+          </div>
+        </div>
+
+        <p data-admin-status class="mt-6 hidden rounded-xl border border-line bg-paper px-4 py-3 text-sm font-semibold"></p>
+
+        <div class="mt-10 flex gap-2 overflow-x-auto pb-1" data-admin-tabs>
+          <button type="button" data-tab="products" class="whitespace-nowrap rounded-full border border-forest bg-forest px-4 py-2 text-sm font-bold text-paper">Товары</button>
+          <button type="button" data-tab="categories" class="whitespace-nowrap rounded-full border border-line bg-paper px-4 py-2 text-sm font-bold text-subtle transition hover:text-ink">Категории</button>
+          <button type="button" data-tab="orders" class="whitespace-nowrap rounded-full border border-line bg-paper px-4 py-2 text-sm font-bold text-subtle transition hover:text-ink">Заказы</button>
+        </div>
+
+        <!-- ========== ТОВАРЫ ========== -->
+        <div data-tab-panel="products" class="mt-8 grid gap-8 lg:grid-cols-[1fr_1.1fr]">
+
+          <form data-admin-form class="grid h-max gap-4 rounded-2xl border border-line bg-paper p-6">
+            <h2 data-form-title class="text-xl font-bold">Новый товар</h2>
+            <input type="hidden" name="id">
+
+            <label class="grid gap-2">
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Категория</span>
+              <select name="categorySlug" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest"></select>
+            </label>
+
+            <label class="grid gap-2">
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Название</span>
+              <input name="name" required class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+            </label>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="grid gap-2">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Slug (url)</span>
+                <input name="slug" required class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+              </label>
+              <label class="grid gap-2">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Папка с фото</span>
+                <input name="folder" required list="asset-folders" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+                <datalist id="asset-folders"></datalist>
+              </label>
+            </div>
+
+            <label class="grid gap-2">
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Вариант (цвет, память)</span>
+              <input name="variant" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+            </label>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="grid gap-2">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Цена</span>
+                <input name="price" type="number" min="0" required class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+              </label>
+              <label class="grid gap-2">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Цена рынка (зачёркнутая)</span>
+                <input name="marketPrice" type="number" min="0" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+              </label>
+            </div>
+
+            <div class="grid gap-3 rounded-xl border border-line bg-canvas p-4" data-discount-block>
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Скидка</span>
+
+              <div class="grid gap-2 sm:grid-cols-3">
+                <label class="flex h-11 items-center justify-center gap-2 rounded-lg border border-line bg-paper text-sm font-semibold transition has-[:checked]:border-forest has-[:checked]:bg-forest has-[:checked]:text-paper">
+                  <input type="radio" name="discountType" value="none" class="hidden" checked> Без скидки
+                </label>
+                <label class="flex h-11 items-center justify-center gap-2 rounded-lg border border-line bg-paper text-sm font-semibold transition has-[:checked]:border-forest has-[:checked]:bg-forest has-[:checked]:text-paper">
+                  <input type="radio" name="discountType" value="percent" class="hidden"> Процент
+                </label>
+                <label class="flex h-11 items-center justify-center gap-2 rounded-lg border border-line bg-paper text-sm font-semibold transition has-[:checked]:border-forest has-[:checked]:bg-forest has-[:checked]:text-paper">
+                  <input type="radio" name="discountType" value="bundle" class="hidden"> Комплект
+                </label>
+              </div>
+
+              <div data-discount-percent class="hidden">
+                <label class="grid gap-2">
+                  <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Скидка, %</span>
+                  <input name="discountPercent" type="number" min="1" max="90" value="10" class="h-12 w-full rounded-xl border border-line bg-paper px-4 text-sm outline-none focus:border-forest">
+                </label>
+              </div>
+
+              <div data-discount-bundle class="hidden grid gap-3 sm:grid-cols-2">
+                <label class="grid gap-2">
+                  <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Оплатить, шт.</span>
+                  <input name="bundleBuyQty" type="number" min="1" value="2" class="h-12 rounded-xl border border-line bg-paper px-4 text-sm outline-none focus:border-forest">
+                </label>
+                <label class="grid gap-2">
+                  <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Получить, шт.</span>
+                  <input name="bundleTotalQty" type="number" min="2" value="3" class="h-12 rounded-xl border border-line bg-paper px-4 text-sm outline-none focus:border-forest">
+                </label>
+                <p class="text-sm text-subtle sm:col-span-2">
+                  На сайте покупатель увидит бейдж: <span data-bundle-preview class="font-bold text-forest">2+1=3</span>
+                </p>
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="grid gap-2">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Источник</span>
+                <input name="source" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+              </label>
+              <label class="grid gap-2">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Сортировка</span>
+                <input name="sortOrder" type="number" value="0" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+              </label>
+            </div>
+
+            <label class="grid gap-2">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Пути к фото (по одному в строке)</span>
+                <button type="button" data-scan-folder class="text-xs font-bold text-forest hover:underline">Найти фото в папке</button>
+              </div>
+              <textarea name="images" rows="4" placeholder="/assets/iPhone_17_Pro/iPhone_17_Pro_1.png" class="rounded-xl border border-line bg-canvas p-4 text-sm outline-none focus:border-forest"></textarea>
+            </label>
+
+            <label class="flex items-center gap-3 text-sm font-semibold">
+              <input name="isActive" type="checkbox" checked class="size-4"> Показывать в каталоге
+            </label>
+
+            <div class="mt-2 flex gap-3">
+              <button type="submit" class="h-12 flex-1 rounded-full bg-forest px-6 text-sm font-bold text-paper transition hover:bg-forest-dark">Сохранить</button>
+              <button type="button" data-cancel-edit class="hidden h-12 rounded-full border border-line px-6 text-sm font-bold transition hover:border-forest/30">Отмена</button>
+            </div>
+          </form>
+
+          <div class="grid h-max gap-3">
+            <input data-product-search type="search" placeholder="Поиск по товарам…" class="h-12 rounded-full border border-line bg-paper px-5 text-sm outline-none transition focus:border-forest">
+            <div class="grid gap-3" data-admin-list></div>
+          </div>
+        </div>
+
+        <!-- ========== КАТЕГОРИИ ========== -->
+        <div data-tab-panel="categories" class="mt-8 hidden gap-8 lg:grid-cols-[1fr_1.1fr]">
+          <form data-category-form class="grid h-max gap-4 rounded-2xl border border-line bg-paper p-6">
+            <h2 data-category-form-title class="text-xl font-bold">Новая категория</h2>
+            <input type="hidden" name="originalSlug">
+
+            <label class="grid gap-2">
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Название</span>
+              <input name="name" required class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+            </label>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="grid gap-2">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Slug (url)</span>
+                <input name="slug" required class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+              </label>
+              <label class="grid gap-2">
+                <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Код</span>
+                <input name="code" maxlength="8" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+              </label>
+            </div>
+
+            <label class="grid gap-2">
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Описание</span>
+              <input name="note" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+            </label>
+
+            <label class="grid gap-2">
+              <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Сортировка</span>
+              <input name="sortOrder" type="number" value="0" class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+            </label>
+
+            <div class="mt-2 flex gap-3">
+              <button type="submit" class="h-12 flex-1 rounded-full bg-forest px-6 text-sm font-bold text-paper transition hover:bg-forest-dark">Сохранить</button>
+              <button type="button" data-cancel-category class="hidden h-12 rounded-full border border-line px-6 text-sm font-bold transition hover:border-forest/30">Отмена</button>
+            </div>
+          </form>
+
+          <div class="grid h-max gap-3" data-category-list></div>
+        </div>
+
+        <!-- ========== ЗАКАЗЫ ========== -->
+        <div data-tab-panel="orders" class="mt-8 hidden grid gap-3" data-orders-list></div>
+
+      </div>
+    </section>
+  </main>
+
+  <div data-site-footer></div>
+
+  <!-- ========== ВХОД ========== -->
+  <div data-admin-login class="fixed inset-0 z-50 hidden items-center justify-center bg-ink/70 px-5">
+    <form data-login-form class="w-full max-w-sm rounded-2xl border border-line bg-paper p-8">
+      <h2 class="text-xl font-bold">Вход в админ-панель</h2>
+      <p class="mt-2 text-sm text-subtle">Пароль задаётся переменной ADMIN_TOKEN в файле .env.</p>
+      <label class="mt-6 grid gap-2">
+        <span class="text-xs font-bold uppercase tracking-[.12em] text-subtle">Пароль</span>
+        <input name="password" type="password" autocomplete="current-password" required class="h-12 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-forest">
+      </label>
+      <p data-login-error class="mt-3 hidden text-sm font-semibold text-forest"></p>
+      <button type="submit" class="mt-6 h-12 w-full rounded-full bg-forest px-6 text-sm font-bold text-paper transition hover:bg-forest-dark">Войти</button>
+    </form>
+  </div>
+
+  <div data-toast class="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 translate-y-24 items-center gap-4 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-paper opacity-0 transition">
+    <span></span><button data-toast-close>×</button>
+  </div>
+</body>
+</html>
