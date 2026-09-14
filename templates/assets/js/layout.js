@@ -8,7 +8,6 @@ function header() {
     <header class="sticky top-0 z-40 border-b border-line/70 bg-canvas/90 backdrop-blur-xl">
       <div class="mx-auto flex h-18 max-w-7xl items-center justify-between px-5 lg:px-8">
         <a href="/" class="flex items-center gap-3">
-          <span class="flex size-9 items-center justify-center rounded-full bg-forest text-sm font-bold text-paper">D</span>
           <span class="text-[17px] font-extrabold">DragonMobile</span>
         </a>
         <nav class="hidden items-center gap-8 text-[13px] font-semibold lg:flex">
