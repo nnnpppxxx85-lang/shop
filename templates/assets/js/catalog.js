@@ -20,17 +20,11 @@ async function catalogPage() {
   async function render(q = '') {
     q = q.trim().toLowerCase();
 
-    if (selected === 'all') {
-      const shown = cats.filter(c => `${c.name} ${c.note || ''}`.toLowerCase().includes(q));
-      grid.innerHTML = shown.length ? shown.map(categoryCard).join('') : emptyState('Ничего не найдено');
-      return;
-    }
-
     grid.innerHTML = skeletonGrid();
-    const products = await API.catalog(selected);
+    const products = await API.catalog(selected === 'all' ? '' : selected);
     const list = products.filter(p => `${p.name} ${p.variant || ''}`.toLowerCase().includes(q));
 
-    grid.innerHTML = list.length ? list.map(productCard).join('') : emptyState('Товары скоро появятся');
+    grid.innerHTML = list.length ? list.map(productCard).join('') : emptyState('Ничего не найдено');
   }
 
   function skeletonGrid() {
@@ -42,15 +36,6 @@ async function catalogPage() {
           <div class="h-4 w-1/3 rounded bg-warm"></div>
         </div>
       </div>`).join('');
-  }
-
-  function categoryCard(c) {
-    return `
-      <a href="/catalog?category=${c.slug}" class="group relative flex min-h-56 flex-col justify-between overflow-hidden rounded-2xl border border-line bg-paper p-6 shadow-sm transition hover:-translate-y-1 hover:border-forest/25 hover:shadow-soft">
-        <span class="text-xs font-bold text-forest/55">${escapeHtml(c.code)}</span>
-        <div><h3 class="text-2xl font-bold">${escapeHtml(c.name)}</h3><p class="mt-2 text-sm text-subtle">${escapeHtml(c.note)}</p></div>
-        <span class="absolute right-5 top-5 flex size-9 items-center justify-center rounded-full bg-mist text-forest transition group-hover:bg-forest group-hover:text-paper">${icon('arrow')}</span>
-      </a>`;
   }
 
   function productCard(p) {

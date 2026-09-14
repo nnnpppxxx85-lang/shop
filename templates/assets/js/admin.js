@@ -149,20 +149,24 @@ async function adminPage() {
   function productRow(p) {
     const badge = discountBadge(p);
     return `
-      <div class="flex items-center gap-4 rounded-2xl border border-line bg-paper p-4">
-        <div class="size-16 shrink-0 overflow-hidden rounded-xl bg-warm">
-          ${p.images && p.images[0] ? `<img src="${escapeHtml(p.images[0])}" alt="" class="size-full object-cover">` : ''}
-        </div>
-        <div class="min-w-0 flex-1">
-          <div class="truncate text-base font-bold">${escapeHtml(p.name)}</div>
-          <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-subtle">
-            <span>${escapeHtml(p.categoryName)} · ${escapeHtml(p.slug)} · ${fmtPrice(p.finalPrice)}</span>
-            ${badge ? `<span class="rounded-full bg-forest/10 px-2 py-0.5 font-bold text-forest">${badge}</span>` : ''}
-            ${p.isActive ? '' : '<span class="rounded-full bg-mist px-2 py-0.5 font-bold">скрыт</span>'}
+      <div class="min-w-0 flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4 sm:flex-row sm:items-center sm:gap-4">
+        <div class="flex min-w-0 items-center gap-4">
+          <div class="size-16 shrink-0 overflow-hidden rounded-xl bg-warm">
+            ${p.images && p.images[0] ? `<img src="${escapeHtml(p.images[0])}" alt="" class="size-full object-cover">` : ''}
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="truncate text-base font-bold">${escapeHtml(p.name)}</div>
+            <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-subtle">
+              <span class="min-w-0 break-words">${escapeHtml(p.categoryName)} · ${escapeHtml(p.slug)} · ${fmtPrice(p.finalPrice)}</span>
+              ${badge ? `<span class="rounded-full bg-forest/10 px-2 py-0.5 font-bold text-forest">${badge}</span>` : ''}
+              ${p.isActive ? '' : '<span class="rounded-full bg-mist px-2 py-0.5 font-bold">скрыт</span>'}
+            </div>
           </div>
         </div>
-        <button type="button" data-edit="${p.id}" class="h-10 rounded-full border border-line px-4 text-sm font-bold transition hover:border-forest/40">Изменить</button>
-        <button type="button" data-del="${p.id}" class="h-10 rounded-full border border-line px-4 text-sm font-bold text-subtle transition hover:text-ink">Удалить</button>
+        <div class="flex gap-2 sm:ml-auto">
+          <button type="button" data-edit="${p.id}" class="h-10 rounded-full border border-line px-4 text-sm font-bold transition hover:border-forest/40">Изменить</button>
+          <button type="button" data-del="${p.id}" class="h-10 rounded-full border border-line px-4 text-sm font-bold text-subtle transition hover:text-ink">Удалить</button>
+        </div>
       </div>`;
   }
 
@@ -318,14 +322,18 @@ async function adminPage() {
   async function loadCategories() {
     categories = await API.categories();
     catList.innerHTML = categories.length ? categories.map((c, i) => `
-      <div class="flex items-center gap-4 rounded-2xl border border-line bg-paper p-4">
-        <span class="w-8 shrink-0 text-xs font-bold text-forest/60">${escapeHtml(c.code || String(i + 1))}</span>
-        <div class="min-w-0 flex-1">
-          <div class="truncate text-base font-bold">${escapeHtml(c.name)}</div>
-          <div class="mt-1 text-xs text-subtle">${escapeHtml(c.slug)}${c.note ? ' · ' + escapeHtml(c.note) : ''}</div>
+      <div class="min-w-0 flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4 sm:flex-row sm:items-center sm:gap-4">
+        <div class="flex min-w-0 items-center gap-4">
+          <span class="w-8 shrink-0 text-xs font-bold text-forest/60">${escapeHtml(c.code || String(i + 1))}</span>
+          <div class="min-w-0 flex-1">
+            <div class="truncate text-base font-bold">${escapeHtml(c.name)}</div>
+            <div class="mt-1 text-xs text-subtle">${escapeHtml(c.slug)}${c.note ? ' · ' + escapeHtml(c.note) : ''}</div>
+          </div>
         </div>
-        <button type="button" data-edit-cat="${escapeHtml(c.slug)}" class="h-10 rounded-full border border-line px-4 text-sm font-bold transition hover:border-forest/40">Изменить</button>
-        <button type="button" data-del-cat="${escapeHtml(c.slug)}" class="h-10 rounded-full border border-line px-4 text-sm font-bold text-subtle transition hover:text-ink">Удалить</button>
+        <div class="flex gap-2 sm:ml-auto">
+          <button type="button" data-edit-cat="${escapeHtml(c.slug)}" class="h-10 rounded-full border border-line px-4 text-sm font-bold transition hover:border-forest/40">Изменить</button>
+          <button type="button" data-del-cat="${escapeHtml(c.slug)}" class="h-10 rounded-full border border-line px-4 text-sm font-bold text-subtle transition hover:text-ink">Удалить</button>
+        </div>
       </div>`).join('') :
       `<div class="rounded-2xl border border-line bg-paper px-6 py-12 text-center text-subtle">Категорий пока нет</div>`;
     await loadCategoriesIntoSelect();
